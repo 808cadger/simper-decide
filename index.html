@@ -553,6 +553,45 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Consent Modal -->
+<div class="modal-overlay" id="consentModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">// Data &amp; Privacy Consent</div>
+    <p style="font-size:0.8rem;line-height:1.7;color:#aaa;margin-bottom:14px">
+      Before using <strong style="color:var(--green)">simper~decide</strong>, please review how your data is handled:
+    </p>
+    <div style="font-size:0.75rem;line-height:1.8;border:1px solid var(--border);padding:12px;margin-bottom:16px">
+      <div style="color:var(--amber);margin-bottom:6px;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase">What is stored (locally on your device only)</div>
+      <div>🔑 <strong>API Key</strong> — your Claude API key, stored in browser localStorage</div>
+      <div>👤 <strong>Profile</strong> — name, age, location, background, photo (optional)</div>
+      <div>💬 <strong>Sessions</strong> — up to 5 chat sessions saved locally</div>
+      <div style="margin-top:10px;color:var(--amber);margin-bottom:6px;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase">What is NOT stored</div>
+      <div>✕ No data is sent to any server except Anthropic's Claude API</div>
+      <div>✕ No tracking, no analytics, no third-party services</div>
+      <div>✕ Camera photos are processed in-memory only — not saved to disk</div>
+    </div>
+    <p style="font-size:0.72rem;color:#555;margin-bottom:16px">
+      You can view or delete all stored data at any time via Settings → My Data.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-icon" style="color:#555;border-color:#333" onclick="declineConsent()">Decline</button>
+      <button class="btn-icon" style="background:var(--green);color:#000" onclick="acceptConsent()">I Agree — Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- My Data Modal -->
+<div class="modal-overlay" id="dataModal">
+  <div class="modal" style="max-width:500px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">// My Data</div>
+    <div id="dataSummary" style="font-size:0.78rem;line-height:1.8"></div>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;margin-top:16px">
+      <button class="btn-icon" style="color:var(--red);border-color:var(--red)" onclick="clearAllData()">✕ Delete All Data</button>
+      <button class="btn-icon" onclick="closeDataModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Profile Modal -->
 <div class="modal-overlay" id="profileModal">
   <div class="modal" style="max-height:90vh;overflow-y:auto">
@@ -612,7 +651,8 @@
       <label>Claude API Key</label>
       <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
+      <button class="btn-icon" style="color:#555;border-color:#333;margin-right:auto" onclick="openDataModal()">My Data</button>
       <button class="btn-icon" onclick="closeSettings()">Cancel</button>
       <button class="btn-icon" style="background:var(--green);color:#000" onclick="saveSettings()">Save</button>
     </div>
@@ -765,11 +805,83 @@ window.addEventListener('load', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
+  if (!localStorage.getItem('sd_consent')) {
+    document.getElementById('consentModal').classList.add('open');
+    return;
+  }
+  initApp();
+});
+
+function initApp() {
   loadSessions();
   renderSessionList();
   loadProfileAvatar();
   if (!localStorage.getItem('sd_api_key')) openSettings();
-});
+}
+
+// ── Consent ──
+function acceptConsent() {
+  localStorage.setItem('sd_consent', '1');
+  document.getElementById('consentModal').classList.remove('open');
+  initApp();
+}
+
+function declineConsent() {
+  document.getElementById('consentModal').classList.remove('open');
+  document.getElementById('chatArea').innerHTML =
+    '<div style="padding:32px;text-align:center;color:#555;font-size:0.8rem">Data consent declined.<br>Refresh to reconsider.</div>';
+}
+
+// ── My Data ──
+function openDataModal() {
+  closeSettings();
+  const apiKey = localStorage.getItem('sd_api_key');
+  const profile = getProfile();
+  const sessionCount = sessions.length;
+  const totalMessages = sessions.reduce((n, s) => n + s.messages.length, 0);
+
+  let html = `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Stored Data Summary</div>`;
+
+  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
+  html += `<div>🔑 <strong>API Key:</strong> ${apiKey ? '••••••••' + apiKey.slice(-6) : 'Not set'}</div>`;
+  html += `</div>`;
+
+  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
+  html += `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Profile</div>`;
+  html += `<div>Name: ${profile.name || '—'}</div>`;
+  html += `<div>Age: ${profile.age || '—'}</div>`;
+  html += `<div>Location: ${profile.location || '—'}</div>`;
+  html += `<div>Background: ${profile.background ? profile.background.substring(0, 60) + (profile.background.length > 60 ? '…' : '') : '—'}</div>`;
+  html += `<div>Photo: ${profile.photo ? '✓ Saved (' + Math.round(profile.photo.length * 0.75 / 1024) + ' KB)' : '—'}</div>`;
+  html += `</div>`;
+
+  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
+  html += `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Sessions</div>`;
+  html += `<div>${sessionCount} session(s) · ${totalMessages} total messages</div>`;
+  sessions.forEach((s, i) => {
+    html += `<div style="color:#555;font-size:0.7rem;margin-top:4px">${i+1}. ${s.title} (${s.date})</div>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="font-size:0.68rem;color:#444;margin-top:8px">All data stored locally in browser. Nothing sent to external servers except Anthropic's Claude API during active chats.</div>`;
+
+  document.getElementById('dataSummary').innerHTML = html;
+  document.getElementById('dataModal').classList.add('open');
+}
+
+function closeDataModal() {
+  document.getElementById('dataModal').classList.remove('open');
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL stored data? This cannot be undone.')) return;
+  localStorage.clear();
+  sessions = [];
+  currentSessionId = null;
+  showToast('All data deleted');
+  closeDataModal();
+  location.reload();
+}
 
 // ── Profile ──
 function getProfile() {
