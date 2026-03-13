@@ -461,6 +461,85 @@
       color: var(--red);
     }
 
+    /* ── Profile avatar ── */
+    .profile-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--amber);
+      object-fit: cover;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .profile-avatar:hover { box-shadow: var(--glow-amber); }
+    .profile-avatar-placeholder {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px dashed var(--amber);
+      background: transparent;
+      color: var(--amber);
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .profile-avatar-placeholder:hover { box-shadow: var(--glow-amber); }
+
+    /* ── Profile modal ── */
+    .profile-photo-area {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    }
+    .profile-photo-preview {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--amber);
+      object-fit: cover;
+      display: none;
+    }
+    .profile-photo-preview.visible { display: block; }
+    .profile-photo-placeholder {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 2px dashed var(--amber);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--amber); font-size: 1.4rem; cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .profile-photo-placeholder:hover { box-shadow: var(--glow-amber); }
+    .photo-btns { display: flex; flex-direction: column; gap: 6px; }
+
+    .field textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.84rem;
+      padding: 8px 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .field textarea:focus { border-color: var(--green); }
+
+    /* ── Share toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--green);
+      color: #000;
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 8px 20px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 9000;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .toast.show { opacity: 1; }
+
     /* Mobile */
     @media (max-width: 560px) {
       .sidebar { width: 130px; }
@@ -470,6 +549,60 @@
   </style>
 </head>
 <body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-title">// My Profile</div>
+    <div class="profile-photo-area">
+      <div>
+        <div class="profile-photo-placeholder" id="profilePhotoPlaceholder" onclick="document.getElementById('profilePhotoFile').click()">👤</div>
+        <img class="profile-photo-preview" id="profilePhotoPreview" src="" alt="profile">
+      </div>
+      <div class="photo-btns">
+        <button class="btn-icon" onclick="document.getElementById('profilePhotoFile').click()">↑ Upload Photo</button>
+        <button class="btn-icon" onclick="openProfileCamera()">📷 Take Photo</button>
+        <button class="btn-icon" style="color:#555;border-color:#333" onclick="clearProfilePhoto()">✕ Remove</button>
+      </div>
+      <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="handleProfilePhotoUpload(event)">
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="profileName" placeholder="Your name">
+    </div>
+    <div class="field">
+      <label>Age</label>
+      <input type="number" id="profileAge" placeholder="e.g. 34" min="1" max="120">
+    </div>
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="profileLocation" placeholder="City, State or Country">
+    </div>
+    <div class="field">
+      <label>Background / Context</label>
+      <textarea id="profileBackground" placeholder="Brief background — job, family situation, goals, anything relevant the advisor should know about you..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeProfile()">Cancel</button>
+      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="saveProfile()">Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Camera Modal -->
+<div class="modal-overlay" id="profileCameraModal">
+  <div class="modal cam-modal">
+    <div class="modal-title">// Take Profile Photo</div>
+    <video id="profileCameraFeed" autoplay playsinline></video>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeProfileCamera()">Cancel</button>
+      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="captureProfilePhoto()">📷 Capture</button>
+    </div>
+  </div>
+</div>
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
@@ -503,7 +636,12 @@
   <div class="logo">simper<span>~</span>decide</div>
   <div class="header-btns">
     <button class="btn-icon" onclick="newSession()">+ New</button>
+    <button class="btn-icon" onclick="shareApp()">⇧ Share</button>
     <button class="btn-icon" onclick="openSettings()">⚙ Settings</button>
+    <div id="profileAvatarWrap" onclick="openProfile()" title="My Profile">
+      <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder">👤</div>
+      <img class="profile-avatar" id="profileAvatarImg" src="" alt="profile" style="display:none">
+    </div>
   </div>
 </div>
 
@@ -620,6 +758,7 @@ let sessions = [];
 let currentSessionId = null;
 let isLoading = false;
 let cameraStream = null;
+let profileCameraStream = null;
 
 // ── Init ──
 window.addEventListener('load', () => {
@@ -628,8 +767,146 @@ window.addEventListener('load', () => {
   }
   loadSessions();
   renderSessionList();
+  loadProfileAvatar();
   if (!localStorage.getItem('sd_api_key')) openSettings();
 });
+
+// ── Profile ──
+function getProfile() {
+  const p = localStorage.getItem('sd_profile');
+  return p ? JSON.parse(p) : {};
+}
+
+function buildSystemPrompt() {
+  const p = getProfile();
+  let context = '';
+  if (p.name || p.age || p.location || p.background) {
+    context = '\n\nUSER PROFILE (use this context to personalize all advice):\n';
+    if (p.name) context += `Name: ${p.name}\n`;
+    if (p.age) context += `Age: ${p.age}\n`;
+    if (p.location) context += `Location: ${p.location}\n`;
+    if (p.background) context += `Background: ${p.background}\n`;
+  }
+  return SYSTEM_PROMPT + context;
+}
+
+function loadProfileAvatar() {
+  const p = getProfile();
+  if (p.photo) {
+    document.getElementById('profileAvatarImg').src = p.photo;
+    document.getElementById('profileAvatarImg').style.display = 'block';
+    document.getElementById('profileAvatarPlaceholder').style.display = 'none';
+  }
+}
+
+function openProfile() {
+  const p = getProfile();
+  document.getElementById('profileName').value = p.name || '';
+  document.getElementById('profileAge').value = p.age || '';
+  document.getElementById('profileLocation').value = p.location || '';
+  document.getElementById('profileBackground').value = p.background || '';
+  if (p.photo) {
+    document.getElementById('profilePhotoPreview').src = p.photo;
+    document.getElementById('profilePhotoPreview').classList.add('visible');
+    document.getElementById('profilePhotoPlaceholder').style.display = 'none';
+  } else {
+    document.getElementById('profilePhotoPreview').classList.remove('visible');
+    document.getElementById('profilePhotoPlaceholder').style.display = 'flex';
+  }
+  document.getElementById('profileModal').classList.add('open');
+}
+
+function closeProfile() {
+  document.getElementById('profileModal').classList.remove('open');
+}
+
+function saveProfile() {
+  const p = getProfile();
+  p.name = document.getElementById('profileName').value.trim();
+  p.age = document.getElementById('profileAge').value.trim();
+  p.location = document.getElementById('profileLocation').value.trim();
+  p.background = document.getElementById('profileBackground').value.trim();
+  localStorage.setItem('sd_profile', JSON.stringify(p));
+  loadProfileAvatar();
+  closeProfile();
+  showToast('Profile saved');
+}
+
+function handleProfilePhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => setProfilePhoto(ev.target.result);
+  reader.readAsDataURL(file);
+}
+
+function setProfilePhoto(dataUrl) {
+  document.getElementById('profilePhotoPreview').src = dataUrl;
+  document.getElementById('profilePhotoPreview').classList.add('visible');
+  document.getElementById('profilePhotoPlaceholder').style.display = 'none';
+  const p = getProfile();
+  p.photo = dataUrl;
+  localStorage.setItem('sd_profile', JSON.stringify(p));
+  loadProfileAvatar();
+}
+
+function clearProfilePhoto() {
+  document.getElementById('profilePhotoPreview').classList.remove('visible');
+  document.getElementById('profilePhotoPlaceholder').style.display = 'flex';
+  const p = getProfile();
+  delete p.photo;
+  localStorage.setItem('sd_profile', JSON.stringify(p));
+  document.getElementById('profileAvatarImg').style.display = 'none';
+  document.getElementById('profileAvatarPlaceholder').style.display = 'flex';
+}
+
+async function openProfileCamera() {
+  document.getElementById('profileCameraModal').classList.add('open');
+  try {
+    profileCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    document.getElementById('profileCameraFeed').srcObject = profileCameraStream;
+  } catch (err) {
+    closeProfileCamera();
+    showToast('Camera error: ' + err.message);
+  }
+}
+
+function closeProfileCamera() {
+  document.getElementById('profileCameraModal').classList.remove('open');
+  if (profileCameraStream) {
+    profileCameraStream.getTracks().forEach(t => t.stop());
+    profileCameraStream = null;
+  }
+}
+
+function captureProfilePhoto() {
+  const video = document.getElementById('profileCameraFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  closeProfileCamera();
+  setProfilePhoto(dataUrl);
+}
+
+// ── Share ──
+function shareApp() {
+  const url = 'https://cadger808.github.io/simper-decide';
+  const text = 'simper~decide — AI advisor for any problem. Top 3 pro options. No fluff.';
+  if (navigator.share) {
+    navigator.share({ title: 'simper~decide', text, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => showToast(url));
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
 
 // ── Sessions ──
 function loadSessions() {
@@ -788,7 +1065,7 @@ async function sendMessage(overrideText) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(),
         messages: session.messages.map(m => ({ role: m.role, content: m.content }))
       })
     });
@@ -803,11 +1080,23 @@ async function sendMessage(overrideText) {
     typingEl.remove();
 
     if (reply.trim() === '[CAMERA_NEEDED]') {
-      openCamera();
-      const msg = 'Opening camera for appearance analysis...';
-      session.messages.push({ role: 'assistant', content: msg });
-      saveSessions();
-      renderMessage('assistant', msg);
+      const p = getProfile();
+      if (p.photo) {
+        // Auto-use saved profile photo
+        const base64 = p.photo.split(',')[1];
+        const mediaType = p.photo.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+        const msg = 'Using your profile photo for appearance analysis...';
+        session.messages.push({ role: 'assistant', content: msg });
+        saveSessions();
+        renderMessage('assistant', msg);
+        await analyzeAppearanceWithPhoto(base64, mediaType);
+      } else {
+        openCamera();
+        const msg = 'Opening camera for appearance analysis...';
+        session.messages.push({ role: 'assistant', content: msg });
+        saveSessions();
+        renderMessage('assistant', msg);
+      }
     } else {
       session.messages.push({ role: 'assistant', content: reply });
       saveSessions();
@@ -962,9 +1251,14 @@ async function captureAndAnalyze() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
-  const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  const p = getProfile();
+  if (!p.photo) setProfilePhoto(dataUrl);
   closeCamera();
+  await analyzeAppearanceWithPhoto(dataUrl.split(',')[1], 'image/jpeg');
+}
 
+async function analyzeAppearanceWithPhoto(base64, mediaType = 'image/jpeg') {
   const apiKey = localStorage.getItem('sd_api_key');
   if (!apiKey) { openSettings(); return; }
   if (!currentSessionId) newSession();
@@ -973,11 +1267,12 @@ async function captureAndAnalyze() {
   if (welcome) welcome.remove();
 
   const session = getSession();
-  const userMsg = 'How do I look? [photo captured]';
-  session.messages.push({ role: 'user', content: userMsg });
-  updateSessionTitle('Appearance analysis');
-  saveSessions();
-  renderMessage('user', userMsg);
+  if (!session.messages.find(m => m.content.includes('[photo'))) {
+    session.messages.push({ role: 'user', content: 'How do I look? [photo captured]' });
+    updateSessionTitle('Appearance analysis');
+    saveSessions();
+    renderMessage('user', 'How do I look? [photo captured]');
+  }
 
   const typingEl = showTyping();
   isLoading = true;
@@ -1008,7 +1303,7 @@ Then ask if they want to go deeper on any area.`,
         messages: [{
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
             { type: 'text', text: 'Analyze my appearance and give me your top 3 professional recommendations.' }
           ]
         }]
