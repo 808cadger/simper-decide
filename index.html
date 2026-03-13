@@ -435,11 +435,6 @@
       border-color: rgba(96,165,250,0.3);
       color: var(--accent2);
     }
-    .mode-toggle.chaos {
-      background: rgba(244,63,94,0.1);
-      border-color: rgba(244,63,94,0.3);
-      color: #f87171;
-    }
     .mode-toggle:hover { opacity: 0.8; }
 
     .sound-btn {
@@ -974,28 +969,6 @@ RULES:
 
 const SYSTEM_PROMPT_CHAT = `You are simper~decide, a sharp knowledgeable AI assistant. Answer anything conversationally. Be direct, helpful, and concise.`;
 
-const SYSTEM_PROMPT_CHAOS = `You are simper~decide in 😈 CHAOS MODE — the world's worst advisor who is also somehow right.
-
-YOUR FLOW:
-1. First, respond with the most hilariously terrible, absurd, or unhinged advice you can think of for their situation. Commit to the bit. Be ridiculous. Use dramatic flair.
-2. Then hit them with a hard pivot — "BUT WAIT. Here's what you should actually do:"
-3. Ask ONE clarifying question in a sarcastic but genuinely useful way.
-4. After enough chaos-flavored clarifying questions, deliver the TOP 3 PRO OPTIONS — real, solid advice — but framed with personality and humor.
-
-FORMAT options exactly like this:
-[DOMAIN: Chaos Edition 😈]
-
-TOP 3 PRO OPTIONS (real ones, unfortunately):
-① [Option] — [actual good advice, but delivered with a wink]
-② [Option] — [actual good advice, but delivered with a wink]
-③ [Option] — [actual good advice, but delivered with a wink]
-
-RULES:
-- The terrible advice must be funny, not harmful. Keep it absurd, not dark.
-- The real advice must actually be good — this is still a real advisor underneath.
-- Clarifying questions can be sarcastic but must genuinely help understand the situation.
-- Never be mean-spirited. Punch at situations, not people.
-- Energy: chaotic best friend who is inexplicably a licensed professional in everything.`;
 
 // ── API Key (set your Claude API key here) ──
 const CLAUDE_API_KEY = '';
@@ -1068,7 +1041,7 @@ function updateSoundBtn() {
 
 // ── Mode ──
 async function toggleMode() {
-  currentMode = currentMode === 'advisor' ? 'chat' : currentMode === 'chat' ? 'chaos' : 'advisor';
+  currentMode = currentMode === 'advisor' ? 'chat' : 'advisor';
   await storeSet('sd_mode', currentMode);
   updateModeBtn();
 }
@@ -1080,14 +1053,10 @@ function updateModeBtn() {
     btn.textContent = '◈ Advisor';
     btn.className = 'mode-toggle advisor';
     input.placeholder = 'Describe your situation...';
-  } else if (currentMode === 'chat') {
+  } else {
     btn.textContent = '◆ Chat';
     btn.className = 'mode-toggle chat';
     input.placeholder = 'Ask me anything...';
-  } else {
-    btn.textContent = '😈 Chaos';
-    btn.className = 'mode-toggle chaos';
-    input.placeholder = 'Go ahead. What mess are we in today?';
   }
 }
 
@@ -1248,7 +1217,7 @@ function getProfile() {
 }
 
 function buildSystemPrompt() {
-  const base = currentMode === 'chat' ? SYSTEM_PROMPT_CHAT : currentMode === 'chaos' ? SYSTEM_PROMPT_CHAOS : SYSTEM_PROMPT_ADVISOR;
+  const base = currentMode === 'chat' ? SYSTEM_PROMPT_CHAT : SYSTEM_PROMPT_ADVISOR;
   const p = getProfile();
   let context = '';
   if (currentMode === 'advisor' && (p.name || p.age || p.location || p.background)) {
