@@ -735,6 +735,63 @@
     }
     .toast.show { opacity: 1; }
 
+    /* ── Model loader overlay ── */
+    .model-loader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(7,7,15,0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 2000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      gap: 20px;
+    }
+    .model-loader.open { display: flex; }
+    .model-loader-logo {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .model-loader-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .model-loader-sub {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      max-width: 300px;
+    }
+    .model-progress-bar {
+      width: 260px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .model-progress-fill {
+      height: 100%;
+      background: var(--accent-grad);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .model-progress-text {
+      font-size: 0.72rem;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
     /* Mobile */
     @media (max-width: 600px) {
       .header { padding: 0 12px; }
@@ -849,6 +906,15 @@
       <button class="btn-primary" onclick="captureAndAnalyze()">Analyze ▶</button>
     </div>
   </div>
+</div>
+
+<!-- Model Loader -->
+<div class="model-loader" id="modelLoader">
+  <div class="model-loader-logo">simper~decide</div>
+  <div class="model-loader-title">Loading AI Model</div>
+  <div class="model-loader-sub" id="modelLoaderSub">Setting up your on-device AI. First time only — downloads ~700MB and stores locally.</div>
+  <div class="model-progress-bar"><div class="model-progress-fill" id="modelProgressFill"></div></div>
+  <div class="model-progress-text" id="modelProgressText">Starting…</div>
 </div>
 
 <!-- App Shell -->
@@ -1010,7 +1076,6 @@ RULES:
 - Always give exactly 3 options when ready — never more, never fewer.
 - Keep drilling until the problem is fully resolved.
 - After delivering options, ask a follow-up clarifying question to go deeper.
-- If user asks anything about their appearance, how they look, style, grooming → respond ONLY with: [CAMERA_NEEDED]
 - Be direct. No filler. No "Great question!" No unnecessary disclaimers.
 - Tone: sharp, confident, like a knowledgeable friend who happens to know everything professionally.
 - Never suggest the user "consult a professional" as a cop-out — BE the professional guidance.`;
@@ -1018,8 +1083,36 @@ RULES:
 const SYSTEM_PROMPT_CHAT = `You are simper~decide, a sharp knowledgeable AI assistant. Answer anything conversationally. Be direct, helpful, and concise.`;
 
 
-// ── API Key (set your Claude API key here) ──
-const CLAUDE_API_KEY = '';
+// ── Local AI Engine (WebLLM — runs fully on-device) ──
+const LOCAL_MODEL = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
+let _engine = null;
+let _engineLoading = false;
+
+async function ensureEngine() {
+  if (_engine) return _engine;
+  if (_engineLoading) {
+    while (_engineLoading) await new Promise(r => setTimeout(r, 150));
+    return _engine;
+  }
+  _engineLoading = true;
+  document.getElementById('modelLoader').classList.add('open');
+
+  try {
+    const { CreateMLCEngine } = await import('https://esm.run/@mlc-ai/web-llm');
+    _engine = await CreateMLCEngine(LOCAL_MODEL, {
+      initProgressCallback: ({ progress, text }) => {
+        const pct = Math.round((progress || 0) * 100);
+        document.getElementById('modelProgressFill').style.width = pct + '%';
+        document.getElementById('modelProgressText').textContent =
+          text ? text.substring(0, 60) : pct + '%';
+      }
+    });
+  } finally {
+    _engineLoading = false;
+    document.getElementById('modelLoader').classList.remove('open');
+  }
+  return _engine;
+}
 
 // ── State ──
 let sessions = [];
@@ -1530,55 +1623,16 @@ async function sendMessage(overrideText) {
   const streamDiv = createStreamingMessage();
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-calls': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        stream: true,
-        system: buildSystemPrompt(),
-        messages: session.messages.map(m => ({ role: m.role, content: m.content }))
-      })
-    });
+    const engine = await ensureEngine();
+    const messages = [
+      { role: 'system', content: buildSystemPrompt() },
+      ...session.messages.map(m => ({ role: m.role, content: m.content }))
+    ];
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'API error ' + response.status);
-    }
-
-    const reply = await readStream(response, streamDiv);
+    const reply = await runLocalStream(engine, messages, streamDiv);
 
     const bodyEl = streamDiv.querySelector('.msg-body');
-    if (bodyEl) {
-      if (reply.trim() === '[CAMERA_NEEDED]') {
-        streamDiv.remove();
-        const p = getProfile();
-        if (p.photo) {
-          const base64 = p.photo.split(',')[1];
-          const mediaType = p.photo.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-          const msg = 'Using your profile photo for appearance analysis...';
-          session.messages.push({ role: 'assistant', content: msg });
-          await saveSessions();
-          renderMessage('assistant', msg);
-          await analyzeAppearanceWithPhoto(base64, mediaType);
-        } else {
-          openCamera();
-          const msg = 'Opening camera for appearance analysis...';
-          session.messages.push({ role: 'assistant', content: msg });
-          await saveSessions();
-          renderMessage('assistant', msg);
-        }
-        return;
-      }
-
-      bodyEl.innerHTML = formatContent(reply);
-    }
+    if (bodyEl) bodyEl.innerHTML = formatContent(reply);
 
     session.messages.push({ role: 'assistant', content: reply });
     await saveSessions();
@@ -1607,38 +1661,27 @@ function createStreamingMessage() {
   return div;
 }
 
-async function readStream(response, streamDiv) {
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
+async function runLocalStream(engine, messages, streamDiv) {
   const bodyEl = streamDiv.querySelector('.msg-body');
   const area = document.getElementById('chatArea');
   let accumulated = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  const chunks = await engine.chat.completions.create({
+    messages,
+    stream: true,
+    max_tokens: 1024,
+    temperature: 0.7,
+  });
 
-    const chunk = decoder.decode(value, { stream: true });
-    const lines = chunk.split('\n');
-
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const data = line.slice(6).trim();
-      if (data === '[DONE]') continue;
-
-      let parsed;
-      try { parsed = JSON.parse(data); } catch { continue; }
-
-      if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
-        accumulated += parsed.delta.text;
-        bodyEl.textContent = accumulated;
-        const cursor = document.createElement('span');
-        cursor.className = 'stream-cursor';
-        cursor.textContent = '▌';
-        bodyEl.appendChild(cursor);
-        area.scrollTop = area.scrollHeight;
-      }
-    }
+  for await (const chunk of chunks) {
+    const delta = chunk.choices[0]?.delta?.content || '';
+    accumulated += delta;
+    bodyEl.textContent = accumulated;
+    const cursor = document.createElement('span');
+    cursor.className = 'stream-cursor';
+    cursor.textContent = '▌';
+    bodyEl.appendChild(cursor);
+    area.scrollTop = area.scrollHeight;
   }
 
   return accumulated;
@@ -1777,82 +1820,17 @@ async function captureAndAnalyze() {
   const p = getProfile();
   if (!p.photo) setProfilePhoto(dataUrl);
   closeCamera();
-  await analyzeAppearanceWithPhoto(dataUrl.split(',')[1], 'image/jpeg');
+  await analyzeAppearanceWithPhoto();
 }
 
-async function analyzeAppearanceWithPhoto(base64, mediaType = 'image/jpeg') {
+async function analyzeAppearanceWithPhoto() {
+  // Local model can't process images — route to text-based appearance advice
   if (!currentSessionId) await newSession();
-
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
-
-  const session = getSession();
-  if (!session.messages.find(m => m.content.includes('[photo'))) {
-    session.messages.push({ role: 'user', content: 'How do I look? [photo captured]' });
-    updateSessionTitle('Appearance analysis');
-    await saveSessions();
-    renderMessage('user', 'How do I look? [photo captured]');
-  }
-
-  isLoading = true;
-  document.getElementById('sendBtn').disabled = true;
-
-  const streamDiv = createStreamingMessage();
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-calls': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 1024,
-        stream: true,
-        system: `You are simper~decide's appearance advisor. Analyze the person's look professionally and constructively. Give TOP 3 specific, actionable style or grooming recommendations. Be honest but kind. Format exactly:
-
-[DOMAIN: Appearance]
-
-TOP 3 PRO OPTIONS:
-① [First recommendation] — [specific actionable detail]
-② [Second recommendation] — [specific actionable detail]
-③ [Third recommendation] — [specific actionable detail]
-
-Then ask if they want to go deeper on any area.`,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-            { type: 'text', text: 'Analyze my appearance and give me your top 3 professional recommendations.' }
-          ]
-        }]
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error?.message || 'API error ' + response.status);
-    }
-
-    const reply = await readStream(response, streamDiv);
-
-    const bodyEl = streamDiv.querySelector('.msg-body');
-    if (bodyEl) bodyEl.innerHTML = formatContent(reply);
-
-    session.messages.push({ role: 'assistant', content: reply });
-    await saveSessions();
-    playBeep();
-
-  } catch (err) {
-    streamDiv.remove();
-    renderMessage('error', 'Analysis error: ' + err.message);
-  } finally {
-    isLoading = false;
-    document.getElementById('sendBtn').disabled = false;
-  }
+  document.getElementById('backBtn').classList.add('visible');
+  document.getElementById('userInput').value = 'I want advice on my appearance, style, and grooming. Ask me clarifying questions so you can give me the best recommendations.';
+  await sendMessage();
 }
 </script>
 </body>
