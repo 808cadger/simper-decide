@@ -1083,35 +1083,47 @@ RULES:
 const SYSTEM_PROMPT_CHAT = `You are simper~decide, a sharp knowledgeable AI assistant. Answer anything conversationally. Be direct, helpful, and concise.`;
 
 
-// ── Local AI Engine (WebLLM — runs fully on-device) ──
-const LOCAL_MODEL = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
-let _engine = null;
-let _engineLoading = false;
+// ── Local AI Engine (Transformers.js — CPU/WASM, no WebGPU needed) ──
+const LOCAL_MODEL = 'HuggingFaceTB/SmolLM2-360M-Instruct';
+let _pipeline = null;
+let _pipelineLoading = false;
 
 async function ensureEngine() {
-  if (_engine) return _engine;
-  if (_engineLoading) {
-    while (_engineLoading) await new Promise(r => setTimeout(r, 150));
-    return _engine;
+  if (_pipeline) return _pipeline;
+  if (_pipelineLoading) {
+    while (_pipelineLoading) await new Promise(r => setTimeout(r, 150));
+    return _pipeline;
   }
-  _engineLoading = true;
+  _pipelineLoading = true;
   document.getElementById('modelLoader').classList.add('open');
+  document.getElementById('modelLoaderSub').textContent =
+    'Downloading AI model (~200MB, one-time). Stored on your device after this.';
 
   try {
-    const { CreateMLCEngine } = await import('https://esm.run/@mlc-ai/web-llm');
-    _engine = await CreateMLCEngine(LOCAL_MODEL, {
-      initProgressCallback: ({ progress, text }) => {
-        const pct = Math.round((progress || 0) * 100);
-        document.getElementById('modelProgressFill').style.width = pct + '%';
-        document.getElementById('modelProgressText').textContent =
-          text ? text.substring(0, 60) : pct + '%';
+    const { pipeline, env } = await import(
+      'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
+    );
+    env.allowLocalModels = false;
+
+    _pipeline = await pipeline('text-generation', LOCAL_MODEL, {
+      dtype: 'q4',
+      device: 'wasm',
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.progress != null) {
+          const pct = Math.round(p.progress);
+          document.getElementById('modelProgressFill').style.width = pct + '%';
+          document.getElementById('modelProgressText').textContent =
+            (p.file ? p.file.split('/').pop() + ' — ' : '') + pct + '%';
+        } else if (p.status === 'ready') {
+          document.getElementById('modelProgressText').textContent = 'Ready!';
+        }
       }
     });
   } finally {
-    _engineLoading = false;
+    _pipelineLoading = false;
     document.getElementById('modelLoader').classList.remove('open');
   }
-  return _engine;
+  return _pipeline;
 }
 
 // ── State ──
@@ -1623,13 +1635,13 @@ async function sendMessage(overrideText) {
   const streamDiv = createStreamingMessage();
 
   try {
-    const engine = await ensureEngine();
+    const pipe = await ensureEngine();
     const messages = [
       { role: 'system', content: buildSystemPrompt() },
       ...session.messages.map(m => ({ role: m.role, content: m.content }))
     ];
 
-    const reply = await runLocalStream(engine, messages, streamDiv);
+    const reply = await runLocalStream(pipe, messages, streamDiv);
 
     const bodyEl = streamDiv.querySelector('.msg-body');
     if (bodyEl) bodyEl.innerHTML = formatContent(reply);
@@ -1661,28 +1673,35 @@ function createStreamingMessage() {
   return div;
 }
 
-async function runLocalStream(engine, messages, streamDiv) {
+async function runLocalStream(pipe, messages, streamDiv) {
   const bodyEl = streamDiv.querySelector('.msg-body');
   const area = document.getElementById('chatArea');
   let accumulated = '';
 
-  const chunks = await engine.chat.completions.create({
-    messages,
-    stream: true,
-    max_tokens: 1024,
-    temperature: 0.7,
+  const { TextStreamer } = await import(
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
+  );
+
+  const streamer = new TextStreamer(pipe.tokenizer, {
+    skip_prompt: true,
+    skip_special_tokens: true,
+    callback_function: (token) => {
+      accumulated += token;
+      bodyEl.textContent = accumulated;
+      const cursor = document.createElement('span');
+      cursor.className = 'stream-cursor';
+      cursor.textContent = '▌';
+      bodyEl.appendChild(cursor);
+      area.scrollTop = area.scrollHeight;
+    }
   });
 
-  for await (const chunk of chunks) {
-    const delta = chunk.choices[0]?.delta?.content || '';
-    accumulated += delta;
-    bodyEl.textContent = accumulated;
-    const cursor = document.createElement('span');
-    cursor.className = 'stream-cursor';
-    cursor.textContent = '▌';
-    bodyEl.appendChild(cursor);
-    area.scrollTop = area.scrollHeight;
-  }
+  await pipe(messages, {
+    max_new_tokens: 512,
+    do_sample: true,
+    temperature: 0.7,
+    streamer,
+  });
 
   return accumulated;
 }
