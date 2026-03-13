@@ -2,36 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>simper~decide</title>
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#07070f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --green: #00e676;
-      --green-dim: #00c853;
-      --green-faint: rgba(0,230,118,0.08);
-      --amber: #ffab00;
-      --amber-faint: rgba(255,171,0,0.1);
-      --red: #ff5252;
-      --bg: #0b0b0f;
-      --bg2: #13131a;
-      --surface: #1a1a24;
-      --surface2: #20202c;
-      --border: rgba(255,255,255,0.07);
-      --border-bright: rgba(0,230,118,0.3);
-      --text: #e0e0e0;
-      --text-dim: #666;
-      --glow: 0 0 12px rgba(0,230,118,0.4);
-      --glow-amber: 0 0 12px rgba(255,171,0,0.4);
-      --radius: 8px;
+      --bg: #07070f;
+      --glass: rgba(255,255,255,0.06);
+      --glass-hover: rgba(255,255,255,0.1);
+      --glass-border: rgba(255,255,255,0.1);
+      --glass-border-bright: rgba(167,139,250,0.5);
+      --text: #f0f0f8;
+      --text-dim: rgba(255,255,255,0.38);
+      --text-mid: rgba(255,255,255,0.65);
+      --accent: #a78bfa;
+      --accent2: #60a5fa;
+      --red: #f87171;
+      --user-grad: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      --accent-grad: linear-gradient(135deg, #a78bfa, #60a5fa);
+      --chaos-grad: linear-gradient(135deg, #f43f5e, #f97316);
+      --r-sm: 12px;
+      --r-md: 18px;
+      --r-lg: 24px;
+      --r-xl: 32px;
     }
 
     body {
@@ -43,15 +44,46 @@
       position: relative;
     }
 
-    /* Subtle dot grid texture */
-    body::before {
-      content: '';
+    /* ── Floating gradient orbs ── */
+    .orb {
       position: fixed;
-      inset: 0;
-      background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 24px 24px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
       pointer-events: none;
       z-index: 0;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #7c3aed, transparent 70%);
+      top: -150px; left: -100px;
+      animation: floatOrb 18s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #2563eb, transparent 70%);
+      bottom: -100px; right: -80px;
+      animation: floatOrb 22s ease-in-out infinite alternate-reverse;
+    }
+    .orb-3 {
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, #0f766e, transparent 70%);
+      top: 50%; right: 20%;
+      animation: floatOrb 15s ease-in-out infinite alternate;
+      opacity: 0.1;
+    }
+    @keyframes floatOrb {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(30px, 40px) scale(1.12); }
+    }
+
+    /* ── Layout ── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
     }
 
     /* ── Header ── */
@@ -59,113 +91,138 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
-      height: 48px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(11,11,15,0.95);
-      backdrop-filter: blur(12px);
-      position: relative;
-      z-index: 10;
+      padding: 0 20px;
+      height: 56px;
+      background: rgba(7,7,15,0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      flex-shrink: 0;
     }
 
     .logo {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--green);
-      text-shadow: var(--glow);
-      letter-spacing: 2px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    .logo span { color: var(--amber); }
 
     .header-btns { display: flex; gap: 6px; align-items: center; }
 
-    .btn-icon {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
+    .btn-pill {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-mid);
       font-family: 'Inter', sans-serif;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 500;
-      padding: 5px 10px;
-      border-radius: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
       cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .btn-icon:hover {
-      background: var(--green-faint);
-      border-color: var(--border-bright);
-      color: var(--green);
+    .btn-pill:hover {
+      background: var(--glass-hover);
+      border-color: var(--glass-border-bright);
+      color: var(--accent);
     }
 
-    .sound-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .profile-avatar-wrap { cursor: pointer; }
+    .profile-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--glass-border-bright);
+      object-fit: cover;
+      transition: box-shadow 0.2s;
+    }
+    .profile-avatar:hover { box-shadow: 0 0 0 3px rgba(167,139,250,0.25); }
+    .profile-avatar-placeholder {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px dashed rgba(255,255,255,0.2);
+      background: var(--glass);
       color: var(--text-dim);
-      font-size: 0.82rem;
-      padding: 5px 8px;
-      border-radius: 6px;
+      font-size: 0.85rem;
       cursor: pointer;
-      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
     }
-    .sound-btn.on { color: var(--green); border-color: var(--border-bright); }
-    .sound-btn:hover { border-color: var(--border-bright); }
+    .profile-avatar-placeholder:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* ── Layout ── */
-    .app {
+    /* ── Body split ── */
+    .body-row {
       display: flex;
-      height: calc(100dvh - 48px);
-      position: relative;
-      z-index: 1;
+      flex: 1;
+      overflow: hidden;
     }
 
     /* ── Sidebar ── */
     .sidebar {
-      width: 180px;
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      padding: 10px 8px;
+      width: 200px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      background: rgba(11,11,15,0.6);
+      padding: 16px 10px;
+      border-right: 1px solid var(--glass-border);
+      background: rgba(7,7,15,0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow-y: auto;
+      gap: 6px;
     }
     .sidebar::-webkit-scrollbar { width: 2px; }
-    .sidebar::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
-    .sidebar-title {
+    .sidebar-label {
       font-size: 0.6rem;
       font-weight: 600;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 1.5px;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
+      padding: 0 6px 6px;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 4px;
     }
 
+    .new-btn {
+      width: 100%;
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.25);
+      color: var(--accent);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 8px;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .new-btn:hover { background: rgba(167,139,250,0.2); }
+
     .session-item {
-      padding: 7px 9px;
-      margin-bottom: 2px;
-      border-radius: 6px;
+      padding: 8px 10px;
+      border-radius: var(--r-sm);
       cursor: pointer;
       font-size: 0.72rem;
       line-height: 1.4;
       color: var(--text-dim);
-      transition: all 0.12s;
+      transition: all 0.15s;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       border: 1px solid transparent;
     }
-    .session-item:hover { background: var(--surface); color: var(--text); }
+    .session-item:hover { background: var(--glass); color: var(--text-mid); }
     .session-item.active {
-      background: var(--green-faint);
-      border-color: var(--border-bright);
-      color: var(--green);
+      background: rgba(167,139,250,0.1);
+      border-color: rgba(167,139,250,0.25);
+      color: var(--accent);
     }
-    .session-item .session-date {
+    .session-item .s-date {
       font-size: 0.58rem;
       color: var(--text-dim);
       display: block;
@@ -173,557 +230,602 @@
       opacity: 0.6;
     }
 
-    .new-session-btn {
-      width: 100%;
-      background: transparent;
-      border: 1px dashed var(--border-bright);
-      color: var(--green);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.68rem;
-      font-weight: 500;
-      padding: 6px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-bottom: 8px;
-      transition: all 0.15s;
-    }
-    .new-session-btn:hover { background: var(--green-faint); }
-
     .export-btn {
+      margin-top: auto;
       width: 100%;
       background: transparent;
-      border: 1px dashed rgba(255,171,0,0.3);
-      color: var(--amber);
+      border: 1px dashed rgba(255,255,255,0.12);
+      color: var(--text-dim);
       font-family: 'Inter', sans-serif;
-      font-size: 0.62rem;
-      font-weight: 500;
-      padding: 5px;
-      border-radius: 6px;
+      font-size: 0.65rem;
+      padding: 7px;
+      border-radius: var(--r-sm);
       cursor: pointer;
-      margin-top: auto;
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
-    .export-btn:hover { background: var(--amber-faint); }
+    .export-btn:hover { background: var(--glass); color: var(--text-mid); }
 
-    /* ── Main ── */
+    /* ── Main chat area ── */
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    .chat-area { flex: 1; overflow-y: auto; padding: 14px 16px; }
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px 8px;
+      display: flex;
+      flex-direction: column;
+    }
     .chat-area::-webkit-scrollbar { width: 3px; }
-    .chat-area::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+    .chat-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
     /* ── Welcome ── */
     .welcome {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 10px 8px 8px;
+      padding: 8px 4px 12px;
       text-align: center;
     }
 
-    @keyframes welcomeGlow {
-      0%, 100% { text-shadow: 0 0 12px rgba(0,230,118,0.5), 0 0 24px rgba(0,230,118,0.2); }
-      50% { text-shadow: 0 0 20px rgba(0,230,118,0.8), 0 0 40px rgba(0,230,118,0.3); }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; }
     }
 
     .welcome-logo {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: var(--green);
-      letter-spacing: 3px;
-      margin-bottom: 2px;
-      animation: welcomeGlow 3s ease-in-out infinite;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+      animation: pulseGlow 3s ease-in-out infinite;
     }
-    .welcome-logo span { color: var(--amber); }
 
     .welcome-sub {
-      font-size: 0.62rem;
-      font-weight: 500;
+      font-size: 0.72rem;
+      font-weight: 400;
       color: var(--text-dim);
-      margin-bottom: 10px;
-      letter-spacing: 0.5px;
+      margin-bottom: 14px;
     }
 
-    /* ── Domain tile grid ── */
+    /* ── Domain tiles ── */
     .domain-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 4px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       width: 100%;
     }
 
     .domain-tile {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 5px 2px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-md);
+      padding: 8px 4px 6px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      gap: 3px;
     }
     .domain-tile:hover {
-      background: var(--green-faint);
-      border-color: var(--border-bright);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0,230,118,0.1);
+      background: rgba(167,139,250,0.12);
+      border-color: rgba(167,139,250,0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(124,58,237,0.15);
     }
-    .domain-tile.amber:hover {
-      background: var(--amber-faint);
-      border-color: rgba(255,171,0,0.4);
-      box-shadow: 0 4px 12px rgba(255,171,0,0.1);
-    }
-    .domain-tile .tile-icon { font-size: 0.9rem; line-height: 1; }
-    .domain-tile .tile-label {
+    .domain-tile:active { transform: translateY(0); }
+    .tile-icon { font-size: 1rem; line-height: 1; }
+    .tile-label {
       font-size: 0.5rem;
       font-weight: 500;
       color: var(--text-dim);
       text-transform: uppercase;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 100%;
     }
-    .domain-tile:hover .tile-label { color: var(--green); }
-    .domain-tile.amber:hover .tile-label { color: var(--amber); }
+    .domain-tile:hover .tile-label { color: var(--accent); }
 
     /* ── Messages ── */
-    @keyframes msgSlideUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .msg {
-      margin-bottom: 14px;
-      line-height: 1.6;
-      animation: msgSlideUp 0.18s ease-out both;
+      margin-bottom: 16px;
+      animation: msgIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+      max-width: 100%;
     }
 
-    .msg-prefix {
-      font-size: 0.6rem;
+    .msg.user {
+      align-self: flex-end;
+      max-width: 82%;
+    }
+
+    .msg.assistant, .msg.msg-error {
+      align-self: flex-start;
+      max-width: 90%;
+    }
+
+    .msg-label {
+      font-size: 0.58rem;
       font-weight: 600;
       color: var(--text-dim);
       margin-bottom: 4px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      padding: 0 4px;
     }
-    .msg.user .msg-prefix { color: var(--amber); }
+    .msg.user .msg-label { text-align: right; color: rgba(167,139,250,0.6); }
 
     .msg-body {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
-      padding: 10px 14px;
-      border-radius: 0 var(--radius) var(--radius) var(--radius);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 2px solid var(--green-dim);
-      color: var(--text);
-    }
-    .msg.user .msg-body {
-      border-left-color: var(--amber);
-      background: rgba(255,171,0,0.04);
-      border-radius: var(--radius) 0 var(--radius) var(--radius);
+      font-size: 0.88rem;
+      line-height: 1.65;
+      padding: 12px 16px;
+      border-radius: var(--r-lg);
+      word-break: break-word;
     }
 
-    /* streaming cursor */
+    .msg.user .msg-body {
+      background: var(--user-grad);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 20px rgba(79,70,229,0.35);
+    }
+
+    .msg.assistant .msg-body {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .msg.msg-error .msg-body {
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.25);
+      color: var(--red);
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Streaming cursor */
     .stream-cursor {
       display: inline-block;
-      color: var(--green);
-      animation: cursorBlink 0.6s step-end infinite;
+      color: var(--accent);
+      animation: blink 0.6s step-end infinite;
     }
-    @keyframes cursorBlink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── Options block ── */
+    .options-block {
+      background: rgba(167,139,250,0.06);
+      border: 1px solid rgba(167,139,250,0.22);
+      border-radius: var(--r-md);
+      padding: 14px;
+      margin-top: 10px;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.1);
+    }
+    .options-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .option-item {
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+    .option-item:last-child { border-bottom: none; }
+    .option-num { color: var(--accent); margin-right: 6px; font-size: 0.75rem; }
+    .option-name { color: #c4b5fd; font-weight: 600; }
+
+    /* Domain badge */
+    .domain-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(96,165,250,0.12);
+      border: 1px solid rgba(96,165,250,0.25);
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
     }
 
     /* ── Quick reply chips ── */
     .chip-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 8px;
-      animation: msgSlideUp 0.18s ease-out both;
+      gap: 6px;
+      margin-top: 10px;
+      animation: msgIn 0.22s ease both;
     }
     .chip {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-dim);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-mid);
       font-family: 'Inter', sans-serif;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 500;
-      padding: 4px 10px;
+      padding: 5px 14px;
       border-radius: 20px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.18s;
     }
     .chip:hover {
-      background: var(--green-faint);
-      border-color: var(--border-bright);
-      color: var(--green);
-    }
-
-    /* ── Options block ── */
-    .options-block {
-      background: rgba(0,230,118,0.04);
-      border: 1px solid var(--border-bright);
-      border-radius: var(--radius);
-      padding: 14px;
-      margin-top: 10px;
-      box-shadow: var(--glow);
-    }
-    .options-title {
-      font-size: 0.62rem;
-      font-weight: 600;
-      color: var(--amber);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 12px;
-    }
-    .option-item {
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.82rem;
-    }
-    .option-item:last-child { border-bottom: none; }
-    .option-num { color: var(--amber); margin-right: 6px; }
-    .option-name { color: var(--green); font-weight: 500; }
-
-    /* ── Domain badge ── */
-    .domain-badge {
-      display: inline-block;
-      font-size: 0.6rem;
-      font-weight: 600;
-      padding: 2px 10px;
-      border-radius: 20px;
-      background: var(--amber-faint);
-      border: 1px solid rgba(255,171,0,0.3);
-      color: var(--amber);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
+      background: rgba(167,139,250,0.15);
+      border-color: rgba(167,139,250,0.4);
+      color: var(--accent);
     }
 
     /* ── Input area ── */
     .input-area {
-      border-top: 1px solid var(--border);
-      padding: 10px 12px;
-      background: rgba(11,11,15,0.95);
-      backdrop-filter: blur(12px);
+      padding: 8px 12px 12px;
+      background: rgba(7,7,15,0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
     }
 
-    .input-row {
-      display: flex;
-      gap: 6px;
-      align-items: flex-end;
-    }
-
-    .input-controls {
+    .input-top {
       display: flex;
       gap: 6px;
       align-items: center;
-      margin-bottom: 7px;
+      margin-bottom: 8px;
     }
 
     .mode-toggle {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
       color: var(--text-dim);
       font-family: 'Inter', sans-serif;
-      font-size: 0.65rem;
-      font-weight: 500;
-      padding: 4px 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 5px 14px;
       border-radius: 20px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s;
     }
     .mode-toggle.advisor {
-      border-color: var(--border-bright);
-      color: var(--green);
-      background: var(--green-faint);
+      background: rgba(167,139,250,0.1);
+      border-color: rgba(167,139,250,0.3);
+      color: var(--accent);
     }
     .mode-toggle.chat {
-      border-color: rgba(255,171,0,0.4);
-      color: var(--amber);
-      background: var(--amber-faint);
+      background: rgba(96,165,250,0.1);
+      border-color: rgba(96,165,250,0.3);
+      color: var(--accent2);
     }
     .mode-toggle.chaos {
-      border-color: rgba(255,82,82,0.4);
-      color: var(--red);
-      background: rgba(255,82,82,0.08);
+      background: rgba(244,63,94,0.1);
+      border-color: rgba(244,63,94,0.3);
+      color: #f87171;
     }
-    .mode-toggle:hover { opacity: 0.85; }
+    .mode-toggle:hover { opacity: 0.8; }
+
+    .sound-btn {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      padding: 5px 9px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+    .sound-btn.on { color: var(--accent); border-color: rgba(167,139,250,0.3); }
+    .sound-btn:hover { background: var(--glass-hover); }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
 
     textarea {
       flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--glass-border);
       color: var(--text);
       font-family: 'Inter', sans-serif;
-      font-size: 0.88rem;
-      padding: 10px 14px;
-      border-radius: var(--radius);
+      font-size: 0.9rem;
+      padding: 11px 16px;
+      border-radius: var(--r-xl);
       resize: none;
       outline: none;
       line-height: 1.5;
-      min-height: 42px;
+      min-height: 44px;
       max-height: 120px;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-    textarea:focus { border-color: var(--border-bright); box-shadow: 0 0 0 3px rgba(0,230,118,0.08); }
-    textarea::placeholder { color: var(--text-dim); opacity: 0.5; }
-    textarea.recording {
-      border-color: rgba(255,82,82,0.5);
-      box-shadow: 0 0 0 3px rgba(255,82,82,0.08);
+    textarea:focus {
+      border-color: rgba(167,139,250,0.5);
+      box-shadow: 0 0 0 4px rgba(124,58,237,0.08);
     }
+    textarea::placeholder { color: var(--text-dim); }
     @keyframes recordPulse {
-      0%, 100% { box-shadow: 0 0 0 3px rgba(255,82,82,0.08); }
-      50% { box-shadow: 0 0 0 5px rgba(255,82,82,0.18); }
+      0%,100%{box-shadow:0 0 0 4px rgba(248,113,113,0.08)}
+      50%{box-shadow:0 0 0 6px rgba(248,113,113,0.18)}
     }
-    textarea.recording { animation: recordPulse 1s ease-in-out infinite; }
-
-    .send-btn {
-      background: var(--green);
-      color: #000;
-      border: none;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 10px 16px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
+    textarea.recording {
+      border-color: rgba(248,113,113,0.5);
+      animation: recordPulse 1s ease-in-out infinite;
     }
-    .send-btn:hover { box-shadow: var(--glow); transform: translateY(-1px); }
-    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .cam-btn, .mic-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .icon-btn {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
       color: var(--text-dim);
       font-size: 1rem;
-      width: 42px; height: 42px;
-      border-radius: var(--radius);
+      width: 44px; height: 44px;
+      border-radius: 50%;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
+      transition: all 0.2s;
       flex-shrink: 0;
     }
-    .cam-btn:hover { background: var(--amber-faint); border-color: rgba(255,171,0,0.3); }
-    .mic-btn:hover { background: var(--green-faint); border-color: var(--border-bright); }
-    .mic-btn.active {
-      background: rgba(255,82,82,0.1);
-      border-color: rgba(255,82,82,0.4);
+    .icon-btn:hover { background: var(--glass-hover); border-color: rgba(167,139,250,0.3); color: var(--accent); }
+    .icon-btn.active {
+      background: rgba(248,113,113,0.12);
+      border-color: rgba(248,113,113,0.4);
       color: var(--red);
       animation: recordPulse 1s ease-in-out infinite;
     }
+
+    .send-btn {
+      background: var(--user-grad);
+      color: #fff;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.3);
+      flex-shrink: 0;
+      font-size: 1.1rem;
+    }
+    .send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(79,70,229,0.5); }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
 
     /* ── Modals ── */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(6px);
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
+      padding: 16px;
     }
     .modal-overlay.open { display: flex; }
 
     .modal {
-      background: var(--bg2);
-      border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.6), var(--glow);
+      background: rgba(15,15,25,0.92);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(167,139,250,0.08);
       padding: 24px;
-      border-radius: 12px;
-      width: 92%;
-      max-width: 460px;
+      border-radius: var(--r-xl);
+      width: 100%;
+      max-width: 440px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
     .modal-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.2px;
       margin-bottom: 18px;
-      color: var(--amber);
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .field { margin-bottom: 14px; }
     .field label {
       display: block;
       font-size: 0.65rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.8px;
       margin-bottom: 6px;
     }
-    .field input {
+    .field input, .field textarea {
       width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--glass-border);
       color: var(--text);
       font-family: 'Inter', sans-serif;
       font-size: 0.88rem;
-      padding: 9px 12px;
-      border-radius: 6px;
+      padding: 10px 14px;
+      border-radius: var(--r-md);
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.2s;
     }
-    .field input:focus { border-color: var(--border-bright); }
+    .field input:focus, .field textarea:focus { border-color: rgba(167,139,250,0.5); }
+    .field textarea { resize: vertical; min-height: 70px; }
 
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+
+    .btn-secondary {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-mid);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: var(--glass-hover); }
+
+    .btn-primary {
+      background: var(--user-grad);
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 8px 20px;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,0.45); }
+
+    .btn-danger {
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: var(--red);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-danger:hover { background: rgba(248,113,113,0.18); }
 
     /* Camera modal */
     .cam-modal video {
       width: 100%;
-      border-radius: 8px;
-      margin-bottom: 12px;
+      border-radius: var(--r-md);
+      margin-bottom: 14px;
       display: block;
     }
 
-    /* Error msg */
-    .msg-error .msg-body {
-      border-left-color: var(--red);
-      background: rgba(255,82,82,0.04);
-      color: var(--red);
-    }
-
-    /* ── Profile avatar ── */
-    .profile-avatar {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: 1.5px solid var(--amber);
-      object-fit: cover;
-      cursor: pointer;
-      transition: box-shadow 0.15s;
-    }
-    .profile-avatar:hover { box-shadow: var(--glow-amber); }
-    .profile-avatar-placeholder {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      border: 1.5px dashed rgba(255,171,0,0.5);
-      background: var(--surface);
-      color: var(--amber);
-      font-size: 0.75rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
-    }
-    .profile-avatar-placeholder:hover { border-color: var(--amber); box-shadow: var(--glow-amber); }
-
-    /* ── Profile modal ── */
-    .profile-photo-area {
-      display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
-    }
+    /* Profile photo area */
+    .profile-photo-area { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
     .profile-photo-preview {
-      width: 64px; height: 64px;
+      width: 72px; height: 72px;
       border-radius: 50%;
-      border: 2px solid var(--amber);
+      border: 2px solid rgba(167,139,250,0.5);
       object-fit: cover;
       display: none;
     }
     .profile-photo-preview.visible { display: block; }
     .profile-photo-placeholder {
-      width: 64px; height: 64px;
+      width: 72px; height: 72px;
       border-radius: 50%;
-      border: 2px dashed rgba(255,171,0,0.4);
-      background: var(--surface);
+      border: 2px dashed rgba(255,255,255,0.15);
+      background: var(--glass);
       display: flex; align-items: center; justify-content: center;
-      color: var(--amber); font-size: 1.6rem; cursor: pointer;
-      transition: all 0.15s; flex-shrink: 0;
+      color: var(--text-dim); font-size: 1.8rem; cursor: pointer;
+      transition: all 0.2s; flex-shrink: 0;
     }
-    .profile-photo-placeholder:hover { border-color: var(--amber); }
+    .profile-photo-placeholder:hover { border-color: var(--accent); }
     .photo-btns { display: flex; flex-direction: column; gap: 6px; }
-
-    .field textarea {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.84rem;
-      padding: 9px 12px;
-      border-radius: 6px;
-      outline: none;
-      resize: vertical;
-      min-height: 60px;
-      transition: border-color 0.15s;
-    }
-    .field textarea:focus { border-color: var(--border-bright); }
 
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: var(--green);
-      color: #000;
+      bottom: 88px; left: 50%; transform: translateX(-50%);
+      background: rgba(15,15,25,0.9);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
       font-family: 'Inter', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 8px 20px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 10px 22px;
       border-radius: 20px;
       opacity: 0;
       transition: opacity 0.25s;
       pointer-events: none;
       z-index: 9000;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      white-space: nowrap;
     }
     .toast.show { opacity: 1; }
 
     /* Mobile */
-    @media (max-width: 560px) {
-      .sidebar { width: 120px; }
-      .logo { font-size: 0.95rem; }
-      .domain-grid { grid-template-columns: repeat(5, 1fr); gap: 3px; }
-      .domain-tile { padding: 4px 1px; }
+    @media (max-width: 600px) {
+      .sidebar { display: none; }
+      .domain-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+      .header { padding: 0 14px; }
+      .chat-area { padding: 14px 10px 6px; }
+      .input-area { padding: 6px 10px 10px; }
+    }
+
+    @media (max-width: 380px) {
+      .domain-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+      .domain-tile { padding: 6px 2px 5px; }
     }
   </style>
 </head>
 <body>
+
+<!-- Floating orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <!-- Consent Modal -->
 <div class="modal-overlay" id="consentModal">
-  <div class="modal" style="max-width:500px">
-    <div class="modal-title">// Data &amp; Privacy Consent</div>
-    <p style="font-size:0.8rem;line-height:1.7;color:#aaa;margin-bottom:14px">
-      Before using <strong style="color:var(--green)">simper~decide</strong>, please review how your data is handled:
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">Privacy & Data Consent</div>
+    <p style="font-size:0.83rem;line-height:1.7;color:var(--text-mid);margin-bottom:16px">
+      Before using <strong style="color:var(--accent)">simper~decide</strong>, here's exactly what happens with your data:
     </p>
-    <div style="font-size:0.75rem;line-height:1.8;border:1px solid var(--border);padding:12px;margin-bottom:16px">
-      <div style="color:var(--amber);margin-bottom:6px;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase">What is stored (locally on your device only)</div>
-      <div>🔑 <strong>API Key</strong> — your Claude API key, stored in browser localStorage</div>
+    <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:14px;margin-bottom:16px;font-size:0.78rem;line-height:1.9;color:var(--text-mid)">
+      <div style="color:var(--accent);font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Stored locally on your device only</div>
+      <div>🔑 <strong>API Key</strong> — your Claude API key</div>
       <div>👤 <strong>Profile</strong> — name, age, location, background, photo (optional)</div>
-      <div>💬 <strong>Sessions</strong> — up to 5 chat sessions saved locally</div>
-      <div style="margin-top:10px;color:var(--amber);margin-bottom:6px;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase">What is NOT stored</div>
-      <div>✕ No data is sent to any server except Anthropic's Claude API</div>
-      <div>✕ No tracking, no analytics, no third-party services</div>
-      <div>✕ Camera photos are processed in-memory only — not saved to disk</div>
+      <div>💬 <strong>Sessions</strong> — up to 5 chat sessions</div>
+      <div style="color:rgba(248,113,113,0.8);font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:10px;margin-bottom:6px">Not stored anywhere</div>
+      <div>✗ No server storage — only Anthropic's Claude API during chats</div>
+      <div>✗ No tracking, no analytics, no third-party services</div>
+      <div>✗ Camera photos processed in-memory only</div>
     </div>
-    <p style="font-size:0.72rem;color:#555;margin-bottom:16px">
-      You can view or delete all stored data at any time via Settings → My Data.
-    </p>
+    <p style="font-size:0.7rem;color:var(--text-dim);margin-bottom:16px">View or delete all data anytime via Settings → My Data.</p>
     <div class="modal-actions">
-      <button class="btn-icon" style="color:#555;border-color:#333" onclick="declineConsent()">Decline</button>
-      <button class="btn-icon" style="background:var(--green);color:#000" onclick="acceptConsent()">I Agree — Continue</button>
+      <button class="btn-secondary" onclick="declineConsent()">Decline</button>
+      <button class="btn-primary" onclick="acceptConsent()">I Agree — Continue</button>
     </div>
   </div>
 </div>
 
 <!-- My Data Modal -->
 <div class="modal-overlay" id="dataModal">
-  <div class="modal" style="max-width:500px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">// My Data</div>
-    <div id="dataSummary" style="font-size:0.78rem;line-height:1.8"></div>
-    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;margin-top:16px">
-      <button class="btn-icon" style="color:var(--red);border-color:var(--red)" onclick="clearAllData()">✕ Delete All Data</button>
-      <button class="btn-icon" onclick="closeDataModal()">Close</button>
+  <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">My Data</div>
+    <div id="dataSummary" style="font-size:0.8rem;line-height:1.8;color:var(--text-mid)"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-danger" onclick="clearAllData()">Delete All Data</button>
+      <button class="btn-secondary" onclick="closeDataModal()">Close</button>
     </div>
   </div>
 </div>
@@ -731,38 +833,29 @@
 <!-- Profile Modal -->
 <div class="modal-overlay" id="profileModal">
   <div class="modal" style="max-height:90vh;overflow-y:auto">
-    <div class="modal-title">// My Profile</div>
+    <div class="modal-title">My Profile</div>
     <div class="profile-photo-area">
       <div>
         <div class="profile-photo-placeholder" id="profilePhotoPlaceholder" onclick="document.getElementById('profilePhotoFile').click()">👤</div>
         <img class="profile-photo-preview" id="profilePhotoPreview" src="" alt="profile">
       </div>
       <div class="photo-btns">
-        <button class="btn-icon" onclick="document.getElementById('profilePhotoFile').click()">↑ Upload Photo</button>
-        <button class="btn-icon" onclick="openProfileCamera()">📷 Take Photo</button>
-        <button class="btn-icon" style="color:#555;border-color:#333" onclick="clearProfilePhoto()">✕ Remove</button>
+        <button class="btn-secondary" style="font-size:0.72rem;padding:6px 12px" onclick="document.getElementById('profilePhotoFile').click()">↑ Upload</button>
+        <button class="btn-secondary" style="font-size:0.72rem;padding:6px 12px" onclick="openProfileCamera()">📷 Camera</button>
+        <button class="btn-secondary" style="font-size:0.72rem;padding:6px 12px;color:var(--text-dim)" onclick="clearProfilePhoto()">✕ Remove</button>
       </div>
       <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="handleProfilePhotoUpload(event)">
     </div>
-    <div class="field">
-      <label>Name</label>
-      <input type="text" id="profileName" placeholder="Your name">
-    </div>
-    <div class="field">
-      <label>Age</label>
-      <input type="number" id="profileAge" placeholder="e.g. 34" min="1" max="120">
-    </div>
-    <div class="field">
-      <label>Location</label>
-      <input type="text" id="profileLocation" placeholder="City, State or Country">
-    </div>
+    <div class="field"><label>Name</label><input type="text" id="profileName" placeholder="Your name"></div>
+    <div class="field"><label>Age</label><input type="number" id="profileAge" placeholder="e.g. 34" min="1" max="120"></div>
+    <div class="field"><label>Location</label><input type="text" id="profileLocation" placeholder="City, State or Country"></div>
     <div class="field">
       <label>Background / Context</label>
-      <textarea id="profileBackground" placeholder="Brief background — job, family situation, goals, anything relevant the advisor should know about you..."></textarea>
+      <textarea id="profileBackground" placeholder="Job, family situation, goals — anything the advisor should know about you..."></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn-icon" onclick="closeProfile()">Cancel</button>
-      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="saveProfile()">Save Profile</button>
+      <button class="btn-secondary" onclick="closeProfile()">Cancel</button>
+      <button class="btn-primary" onclick="saveProfile()">Save Profile</button>
     </div>
   </div>
 </div>
@@ -770,11 +863,11 @@
 <!-- Profile Camera Modal -->
 <div class="modal-overlay" id="profileCameraModal">
   <div class="modal cam-modal">
-    <div class="modal-title">// Take Profile Photo</div>
+    <div class="modal-title">Take Profile Photo</div>
     <video id="profileCameraFeed" autoplay playsinline></video>
     <div class="modal-actions">
-      <button class="btn-icon" onclick="closeProfileCamera()">Cancel</button>
-      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="captureProfilePhoto()">📷 Capture</button>
+      <button class="btn-secondary" onclick="closeProfileCamera()">Cancel</button>
+      <button class="btn-primary" onclick="captureProfilePhoto()">📷 Capture</button>
     </div>
   </div>
 </div>
@@ -782,15 +875,15 @@
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
-    <div class="modal-title">// Settings</div>
+    <div class="modal-title">Settings</div>
     <div class="field">
       <label>Claude API Key</label>
       <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
     </div>
     <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
-      <button class="btn-icon" style="color:#555;border-color:#333;margin-right:auto" onclick="openDataModal()">My Data</button>
-      <button class="btn-icon" onclick="closeSettings()">Cancel</button>
-      <button class="btn-icon" style="background:var(--green);color:#000" onclick="saveSettings()">Save</button>
+      <button class="btn-secondary" style="margin-right:auto;font-size:0.72rem" onclick="openDataModal()">My Data</button>
+      <button class="btn-secondary" onclick="closeSettings()">Cancel</button>
+      <button class="btn-primary" onclick="saveSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -798,87 +891,90 @@
 <!-- Camera Modal -->
 <div class="modal-overlay" id="cameraModal">
   <div class="modal cam-modal">
-    <div class="modal-title">// Appearance Analysis</div>
+    <div class="modal-title">Appearance Analysis</div>
     <video id="cameraFeed" autoplay playsinline></video>
     <div class="modal-actions">
-      <button class="btn-icon" onclick="closeCamera()">Cancel</button>
-      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="captureAndAnalyze()">▶ Analyze</button>
+      <button class="btn-secondary" onclick="closeCamera()">Cancel</button>
+      <button class="btn-primary" onclick="captureAndAnalyze()">Analyze ▶</button>
     </div>
   </div>
 </div>
 
-<!-- Header -->
-<div class="header">
-  <div class="logo">simper<span>~</span>decide</div>
-  <div class="header-btns">
-    <button class="sound-btn" id="soundToggleBtn" onclick="toggleSound()" title="Toggle sounds">🔇</button>
-    <button class="btn-icon" onclick="newSession()">+ New</button>
-    <button class="btn-icon" onclick="shareApp()">⇧ Share</button>
-    <button class="btn-icon" onclick="openSettings()">⚙ Settings</button>
-    <div id="profileAvatarWrap" onclick="openProfile()" title="My Profile">
-      <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder">👤</div>
-      <img class="profile-avatar" id="profileAvatarImg" src="" alt="profile" style="display:none">
+<!-- App Shell -->
+<div class="shell">
+  <div class="header">
+    <div class="logo">simper~decide</div>
+    <div class="header-btns">
+      <button class="btn-pill" onclick="newSession()">+ New</button>
+      <button class="btn-pill" onclick="shareApp()">Share</button>
+      <button class="btn-pill" onclick="openSettings()">Settings</button>
+      <div class="profile-avatar-wrap" onclick="openProfile()" id="profileAvatarWrap" title="My Profile">
+        <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder">👤</div>
+        <img class="profile-avatar" id="profileAvatarImg" src="" alt="profile" style="display:none">
+      </div>
     </div>
   </div>
-</div>
 
-<div class="app">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-title">Sessions</div>
-    <div id="sessionList"></div>
-    <button class="export-btn" onclick="exportSession()">⇩ Export Session</button>
-  </div>
+  <div class="body-row">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-label">Sessions</div>
+      <button class="new-btn" onclick="newSession()">+ New Session</button>
+      <div id="sessionList"></div>
+      <button class="export-btn" onclick="exportSession()">↓ Export Session</button>
+    </div>
 
-  <!-- Main -->
-  <div class="main">
-    <div class="chat-area" id="chatArea">
-      <div class="welcome" id="welcomeScreen">
-        <div class="welcome-logo">simper<span>~</span>decide</div>
-        <div class="welcome-sub">Ask anything — get pro options</div>
-        <div class="domain-grid">
-          <button class="domain-tile" onclick="quickStart('I need legal advice')"><span class="tile-icon">⚖️</span><span class="tile-label">Legal</span></button>
-          <button class="domain-tile" onclick="quickStart('I need financial advice')"><span class="tile-icon">💰</span><span class="tile-label">Finance</span></button>
-          <button class="domain-tile" onclick="quickStart('I need tax help')"><span class="tile-icon">🧾</span><span class="tile-label">Taxes</span></button>
-          <button class="domain-tile" onclick="quickStart('I need real estate advice')"><span class="tile-icon">🏠</span><span class="tile-label">Real Estate</span></button>
-          <button class="domain-tile" onclick="quickStart('I need insurance guidance')"><span class="tile-icon">🛡️</span><span class="tile-label">Insurance</span></button>
-          <button class="domain-tile" onclick="quickStart('I need help with debt')"><span class="tile-icon">💳</span><span class="tile-label">Debt</span></button>
-          <button class="domain-tile" onclick="quickStart('I need medical guidance')"><span class="tile-icon">🏥</span><span class="tile-label">Medical</span></button>
-          <button class="domain-tile" onclick="quickStart('I need mental health support')"><span class="tile-icon">🧠</span><span class="tile-label">Mental Health</span></button>
-          <button class="domain-tile" onclick="quickStart('I need fitness advice')"><span class="tile-icon">💪</span><span class="tile-label">Fitness</span></button>
-          <button class="domain-tile" onclick="quickStart('I need nutrition guidance')"><span class="tile-icon">🥗</span><span class="tile-label">Nutrition</span></button>
-          <button class="domain-tile" onclick="quickStart('I need career guidance')"><span class="tile-icon">💼</span><span class="tile-label">Career</span></button>
-          <button class="domain-tile" onclick="quickStart('I need business advice')"><span class="tile-icon">🏢</span><span class="tile-label">Business</span></button>
-          <button class="domain-tile" onclick="quickStart('I need education guidance')"><span class="tile-icon">🎓</span><span class="tile-label">Education</span></button>
-          <button class="domain-tile" onclick="quickStart('I need help with relationships')"><span class="tile-icon">❤️</span><span class="tile-label">Relationships</span></button>
-          <button class="domain-tile" onclick="quickStart('I need parenting advice')"><span class="tile-icon">👶</span><span class="tile-label">Parenting</span></button>
-          <button class="domain-tile" onclick="quickStart('I need family advice')"><span class="tile-icon">👨‍👩‍👧</span><span class="tile-label">Family</span></button>
-          <button class="domain-tile" onclick="quickStart('I need home improvement advice')"><span class="tile-icon">🔨</span><span class="tile-label">Home</span></button>
-          <button class="domain-tile" onclick="quickStart('I need travel advice')"><span class="tile-icon">✈️</span><span class="tile-label">Travel</span></button>
-          <button class="domain-tile" onclick="quickStart('I need pet advice')"><span class="tile-icon">🐾</span><span class="tile-label">Pets</span></button>
-          <button class="domain-tile" onclick="quickStart('I need auto or vehicle advice')"><span class="tile-icon">🚗</span><span class="tile-label">Auto</span></button>
-          <button class="domain-tile" onclick="quickStart('I need tech help')"><span class="tile-icon">💻</span><span class="tile-label">Tech</span></button>
-          <button class="domain-tile" onclick="quickStart('I need retirement planning advice')"><span class="tile-icon">🏦</span><span class="tile-label">Retirement</span></button>
-          <button class="domain-tile" onclick="quickStart('I need immigration guidance')"><span class="tile-icon">🌍</span><span class="tile-label">Immigration</span></button>
-          <button class="domain-tile" onclick="quickStart('I need spiritual or life guidance')"><span class="tile-icon">🙏</span><span class="tile-label">Spirituality</span></button>
-          <button class="domain-tile" onclick="quickStart('I need help making a big decision')"><span class="tile-icon">🤔</span><span class="tile-label">Decisions</span></button>
-          <button class="domain-tile" onclick="quickStart('I need everyday advice')"><span class="tile-icon">💡</span><span class="tile-label">General</span></button>
-          <button class="domain-tile amber" onclick="quickStart('How do I look?')"><span class="tile-icon">🪞</span><span class="tile-label">Appearance</span></button>
-          <button class="domain-tile" onclick="quickStart('I need help with my mental health and emotions')"><span class="tile-icon">😌</span><span class="tile-label">Emotions</span></button>
+    <!-- Main -->
+    <div class="main">
+      <div class="chat-area" id="chatArea">
+        <div class="welcome" id="welcomeScreen">
+          <div class="welcome-logo">simper~decide</div>
+          <div class="welcome-sub">Ask anything — get your top 3 pro options</div>
+          <div class="domain-grid">
+            <button class="domain-tile" onclick="quickStart('I need legal advice')"><span class="tile-icon">⚖️</span><span class="tile-label">Legal</span></button>
+            <button class="domain-tile" onclick="quickStart('I need financial advice')"><span class="tile-icon">💰</span><span class="tile-label">Finance</span></button>
+            <button class="domain-tile" onclick="quickStart('I need tax help')"><span class="tile-icon">🧾</span><span class="tile-label">Taxes</span></button>
+            <button class="domain-tile" onclick="quickStart('I need real estate advice')"><span class="tile-icon">🏠</span><span class="tile-label">Real Estate</span></button>
+            <button class="domain-tile" onclick="quickStart('I need insurance guidance')"><span class="tile-icon">🛡️</span><span class="tile-label">Insurance</span></button>
+            <button class="domain-tile" onclick="quickStart('I need help with debt')"><span class="tile-icon">💳</span><span class="tile-label">Debt</span></button>
+            <button class="domain-tile" onclick="quickStart('I need medical guidance')"><span class="tile-icon">🏥</span><span class="tile-label">Medical</span></button>
+            <button class="domain-tile" onclick="quickStart('I need mental health support')"><span class="tile-icon">🧠</span><span class="tile-label">Mental Health</span></button>
+            <button class="domain-tile" onclick="quickStart('I need fitness advice')"><span class="tile-icon">💪</span><span class="tile-label">Fitness</span></button>
+            <button class="domain-tile" onclick="quickStart('I need nutrition guidance')"><span class="tile-icon">🥗</span><span class="tile-label">Nutrition</span></button>
+            <button class="domain-tile" onclick="quickStart('I need career guidance')"><span class="tile-icon">💼</span><span class="tile-label">Career</span></button>
+            <button class="domain-tile" onclick="quickStart('I need business advice')"><span class="tile-icon">🏢</span><span class="tile-label">Business</span></button>
+            <button class="domain-tile" onclick="quickStart('I need education guidance')"><span class="tile-icon">🎓</span><span class="tile-label">Education</span></button>
+            <button class="domain-tile" onclick="quickStart('I need help with relationships')"><span class="tile-icon">❤️</span><span class="tile-label">Relationships</span></button>
+            <button class="domain-tile" onclick="quickStart('I need parenting advice')"><span class="tile-icon">👶</span><span class="tile-label">Parenting</span></button>
+            <button class="domain-tile" onclick="quickStart('I need family advice')"><span class="tile-icon">👨‍👩‍👧</span><span class="tile-label">Family</span></button>
+            <button class="domain-tile" onclick="quickStart('I need home improvement advice')"><span class="tile-icon">🔨</span><span class="tile-label">Home</span></button>
+            <button class="domain-tile" onclick="quickStart('I need travel advice')"><span class="tile-icon">✈️</span><span class="tile-label">Travel</span></button>
+            <button class="domain-tile" onclick="quickStart('I need pet advice')"><span class="tile-icon">🐾</span><span class="tile-label">Pets</span></button>
+            <button class="domain-tile" onclick="quickStart('I need auto or vehicle advice')"><span class="tile-icon">🚗</span><span class="tile-label">Auto</span></button>
+            <button class="domain-tile" onclick="quickStart('I need tech help')"><span class="tile-icon">💻</span><span class="tile-label">Tech</span></button>
+            <button class="domain-tile" onclick="quickStart('I need retirement planning advice')"><span class="tile-icon">🏦</span><span class="tile-label">Retirement</span></button>
+            <button class="domain-tile" onclick="quickStart('I need immigration guidance')"><span class="tile-icon">🌍</span><span class="tile-label">Immigration</span></button>
+            <button class="domain-tile" onclick="quickStart('I need spiritual or life guidance')"><span class="tile-icon">🙏</span><span class="tile-label">Spirituality</span></button>
+            <button class="domain-tile" onclick="quickStart('I need help making a big decision')"><span class="tile-icon">🤔</span><span class="tile-label">Decisions</span></button>
+            <button class="domain-tile" onclick="quickStart('I need everyday advice')"><span class="tile-icon">💡</span><span class="tile-label">General</span></button>
+            <button class="domain-tile" onclick="quickStart('How do I look?')"><span class="tile-icon">🪞</span><span class="tile-label">Appearance</span></button>
+            <button class="domain-tile" onclick="quickStart('I need help with my emotions')"><span class="tile-icon">😌</span><span class="tile-label">Emotions</span></button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="input-area">
-      <div class="input-controls">
-        <button class="mode-toggle advisor" id="modeToggleBtn" onclick="toggleMode()">◈ Advisor</button>
-      </div>
-      <div class="input-row">
-        <button class="cam-btn" onclick="openCamera()" title="Appearance analysis">📷</button>
-        <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
-        <textarea id="userInput" placeholder="Describe your problem or ask anything..."
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send ▶</button>
+      <div class="input-area">
+        <div class="input-top">
+          <button class="mode-toggle advisor" id="modeToggleBtn" onclick="toggleMode()">◈ Advisor</button>
+          <button class="sound-btn" id="soundToggleBtn" onclick="toggleSound()" title="Toggle sounds">🔇</button>
+        </div>
+        <div class="input-row">
+          <button class="icon-btn" onclick="openCamera()" title="Appearance analysis">📷</button>
+          <button class="icon-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
+          <textarea id="userInput" placeholder="Describe your situation..."
+            onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">↑</button>
+        </div>
       </div>
     </div>
   </div>
@@ -992,32 +1088,21 @@ RULES:
 - Never be mean-spirited. Punch at situations, not people.
 - Energy: chaotic best friend who is inexplicably a licensed professional in everything.`;
 
-
 // ── State ──
 let sessions = [];
 let currentSessionId = null;
 let isLoading = false;
 let cameraStream = null;
 let profileCameraStream = null;
-
-// Mode: 'advisor' | 'chat'
-let currentMode = 'advisor';  // will be set in initApp
-
-// Sound: true | false
-let soundEnabled = false;      // will be set in initApp
-
-// Speech recognition
+let currentMode = 'advisor';
+let soundEnabled = false;
 let recognition = null;
 let isRecording = false;
-
-// Web Audio context (lazy init)
 let audioCtx = null;
 
 // ── Audio ──
 function getAudioCtx() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
@@ -1082,7 +1167,7 @@ function updateModeBtn() {
   if (currentMode === 'advisor') {
     btn.textContent = '◈ Advisor';
     btn.className = 'mode-toggle advisor';
-    input.placeholder = 'Describe your problem or ask anything...';
+    input.placeholder = 'Describe your situation...';
   } else if (currentMode === 'chat') {
     btn.textContent = '◆ Chat';
     btn.className = 'mode-toggle chat';
@@ -1097,15 +1182,9 @@ function updateModeBtn() {
 // ── Voice ──
 function toggleMic() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    showToast('Voice not supported in this browser');
-    return;
-  }
+  if (!SpeechRecognition) { showToast('Voice not supported in this browser'); return; }
 
-  if (isRecording) {
-    stopRecording();
-    return;
-  }
+  if (isRecording) { stopRecording(); return; }
 
   recognition = new SpeechRecognition();
   recognition.continuous = false;
@@ -1119,12 +1198,11 @@ function toggleMic() {
   };
 
   recognition.onresult = (e) => {
-    let interim = '';
-    let final = '';
+    let interim = '', final = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const t = e.results[i][0].transcript;
-      if (e.results[i].isFinal) { final += t; }
-      else { interim += t; }
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
     }
     document.getElementById('userInput').value = final || interim;
     autoResize(document.getElementById('userInput'));
@@ -1149,10 +1227,7 @@ function toggleMic() {
 }
 
 function stopRecording() {
-  if (recognition) {
-    recognition.stop();
-    recognition = null;
-  }
+  if (recognition) { recognition.stop(); recognition = null; }
 }
 
 // ── Init ──
@@ -1189,7 +1264,7 @@ async function acceptConsent() {
 function declineConsent() {
   document.getElementById('consentModal').classList.remove('open');
   document.getElementById('chatArea').innerHTML =
-    '<div style="padding:32px;text-align:center;color:#555;font-size:0.8rem">Data consent declined.<br>Refresh to reconsider.</div>';
+    '<div style="padding:40px;text-align:center;color:var(--text-dim);font-size:0.82rem">Data consent declined.<br>Refresh to reconsider.</div>';
 }
 
 // ── My Data ──
@@ -1200,30 +1275,27 @@ function openDataModal() {
   const sessionCount = sessions.length;
   const totalMessages = sessions.reduce((n, s) => n + s.messages.length, 0);
 
-  let html = `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Stored Data Summary</div>`;
-
-  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
-  html += `<div>🔑 <strong>API Key:</strong> ${apiKey ? '••••••••' + apiKey.slice(-6) : 'Not set'}</div>`;
+  let html = `<div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:12px;margin-bottom:10px">`;
+  html += `<div>🔑 <strong>API Key:</strong> ${apiKey ? '••••••' + apiKey.slice(-6) : 'Not set'}</div>`;
   html += `</div>`;
 
-  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
-  html += `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Profile</div>`;
+  html += `<div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:12px;margin-bottom:10px">`;
+  html += `<div style="color:var(--accent);font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Profile</div>`;
   html += `<div>Name: ${profile.name || '—'}</div>`;
   html += `<div>Age: ${profile.age || '—'}</div>`;
   html += `<div>Location: ${profile.location || '—'}</div>`;
-  html += `<div>Background: ${profile.background ? profile.background.substring(0, 60) + (profile.background.length > 60 ? '…' : '') : '—'}</div>`;
-  html += `<div>Photo: ${profile.photo ? '✓ Saved (' + Math.round(profile.photo.length * 0.75 / 1024) + ' KB)' : '—'}</div>`;
+  html += `<div>Background: ${profile.background ? profile.background.substring(0,60)+'…' : '—'}</div>`;
+  html += `<div>Photo: ${profile.photo ? '✓ Saved (' + Math.round(profile.photo.length*0.75/1024) + ' KB)' : '—'}</div>`;
   html += `</div>`;
 
-  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
-  html += `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Sessions</div>`;
+  html += `<div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:12px;margin-bottom:10px">`;
+  html += `<div style="color:var(--accent);font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Sessions</div>`;
   html += `<div>${sessionCount} session(s) · ${totalMessages} total messages</div>`;
   sessions.forEach((s, i) => {
-    html += `<div style="color:#555;font-size:0.7rem;margin-top:4px">${i+1}. ${s.title} (${s.date})</div>`;
+    html += `<div style="color:var(--text-dim);font-size:0.7rem;margin-top:4px">${i+1}. ${s.title} (${s.date})</div>`;
   });
   html += `</div>`;
-
-  html += `<div style="font-size:0.68rem;color:#444;margin-top:8px">All data stored locally in browser. Nothing sent to external servers except Anthropic's Claude API during active chats.</div>`;
+  html += `<div style="font-size:0.68rem;color:var(--text-dim)">All data stored locally. Nothing sent externally except Anthropic's Claude API during active chats.</div>`;
 
   document.getElementById('dataSummary').innerHTML = html;
   document.getElementById('dataModal').classList.add('open');
@@ -1246,26 +1318,19 @@ async function clearAllData() {
 // ── Export ──
 function exportSession() {
   const session = getSession();
-  if (!session || session.messages.length === 0) {
-    showToast('No messages to export');
-    return;
-  }
+  if (!session || session.messages.length === 0) { showToast('No messages to export'); return; }
 
   let text = `simper~decide — Session Export\n`;
-  text += `Session: ${session.title}\n`;
-  text += `Date: ${session.date}\n`;
-  text += `${'─'.repeat(40)}\n\n`;
+  text += `Session: ${session.title}\nDate: ${session.date}\n${'─'.repeat(40)}\n\n`;
 
   session.messages.forEach(m => {
     const role = m.role === 'user' ? 'YOU' : 'ADVISOR';
     text += `[${role}]\n${m.content}\n\n`;
   });
 
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('Copied!');
-  }).catch(() => {
-    showToast('Export failed — clipboard unavailable');
-  });
+  navigator.clipboard.writeText(text)
+    .then(() => showToast('Copied!'))
+    .catch(() => showToast('Export failed'));
 }
 
 // ── Profile ──
@@ -1418,12 +1483,7 @@ async function saveSessions() {
 
 async function newSession() {
   currentSessionId = Date.now().toString();
-  sessions.unshift({
-    id: currentSessionId,
-    title: 'New session',
-    date: new Date().toLocaleDateString(),
-    messages: []
-  });
+  sessions.unshift({ id: currentSessionId, title: 'New session', date: new Date().toLocaleDateString(), messages: [] });
   if (sessions.length > 5) sessions = sessions.slice(0, 5);
   await saveSessions();
   renderSessionList();
@@ -1459,7 +1519,7 @@ function renderSessionList() {
   sessions.forEach(s => {
     const el = document.createElement('div');
     el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
-    el.innerHTML = `${s.title}<span class="session-date">${s.date}</span>`;
+    el.innerHTML = `${s.title}<span class="s-date">${s.date}</span>`;
     el.onclick = () => loadSession(s.id);
     list.appendChild(el);
   });
@@ -1467,8 +1527,8 @@ function renderSessionList() {
 
 function buildWelcomeHTML() {
   return `<div class="welcome" id="welcomeScreen">
-    <div class="welcome-logo">simper<span style="color:var(--amber)">~</span>decide</div>
-    <div class="welcome-sub">Ask anything — get pro options</div>
+    <div class="welcome-logo">simper~decide</div>
+    <div class="welcome-sub">Ask anything — get your top 3 pro options</div>
     <div class="domain-grid">
       <button class="domain-tile" onclick="quickStart('I need legal advice')"><span class="tile-icon">⚖️</span><span class="tile-label">Legal</span></button>
       <button class="domain-tile" onclick="quickStart('I need financial advice')"><span class="tile-icon">💰</span><span class="tile-label">Finance</span></button>
@@ -1496,7 +1556,7 @@ function buildWelcomeHTML() {
       <button class="domain-tile" onclick="quickStart('I need spiritual or life guidance')"><span class="tile-icon">🙏</span><span class="tile-label">Spirituality</span></button>
       <button class="domain-tile" onclick="quickStart('I need help making a big decision')"><span class="tile-icon">🤔</span><span class="tile-label">Decisions</span></button>
       <button class="domain-tile" onclick="quickStart('I need everyday advice')"><span class="tile-icon">💡</span><span class="tile-label">General</span></button>
-      <button class="domain-tile amber" onclick="quickStart('How do I look?')"><span class="tile-icon">🪞</span><span class="tile-label">Appearance</span></button>
+      <button class="domain-tile" onclick="quickStart('How do I look?')"><span class="tile-icon">🪞</span><span class="tile-label">Appearance</span></button>
       <button class="domain-tile" onclick="quickStart('I need help with my emotions')"><span class="tile-icon">😌</span><span class="tile-label">Emotions</span></button>
     </div>
   </div>`;
@@ -1517,10 +1577,7 @@ async function sendMessage(overrideText) {
   const text = overrideText || input.value.trim();
   if (!text) return;
 
-  // Haptic feedback
   if (navigator.vibrate) navigator.vibrate(30);
-
-  // Click sound
   playClick();
 
   const welcome = document.getElementById('welcomeScreen');
@@ -1540,7 +1597,6 @@ async function sendMessage(overrideText) {
   isLoading = true;
   document.getElementById('sendBtn').disabled = true;
 
-  // Create streaming message container
   const streamDiv = createStreamingMessage();
 
   try {
@@ -1568,7 +1624,6 @@ async function sendMessage(overrideText) {
 
     const reply = await readStream(response, streamDiv);
 
-    // Finalize: replace streaming raw text with formatted content
     const bodyEl = streamDiv.querySelector('.msg-body');
     if (bodyEl) {
       if (reply.trim() === '[CAMERA_NEEDED]') {
@@ -1597,18 +1652,13 @@ async function sendMessage(overrideText) {
 
     session.messages.push({ role: 'assistant', content: reply });
     await saveSessions();
-
-    // Beep on completion
     playBeep();
 
-    // Show quick reply chips in advisor mode
-    if (currentMode === 'advisor') {
-      showChips(streamDiv, reply);
-    }
+    if (currentMode === 'advisor') showChips(streamDiv, reply);
 
   } catch (err) {
     streamDiv.remove();
-    renderMessage('error', `[ERROR] ${err.message}`);
+    renderMessage('error', `Error: ${err.message}`);
   } finally {
     isLoading = false;
     document.getElementById('sendBtn').disabled = false;
@@ -1620,7 +1670,7 @@ function createStreamingMessage() {
   const div = document.createElement('div');
   div.className = 'msg assistant';
   div.innerHTML = `
-    <div class="msg-prefix">◈ ADVISOR</div>
+    <div class="msg-label">simper~decide</div>
     <div class="msg-body"><span class="stream-cursor">▌</span></div>`;
   area.appendChild(div);
   area.scrollTop = area.scrollHeight;
@@ -1651,7 +1701,6 @@ async function readStream(response, streamDiv) {
 
       if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
         accumulated += parsed.delta.text;
-        // Show raw text + blinking cursor during streaming
         bodyEl.textContent = accumulated;
         const cursor = document.createElement('span');
         cursor.className = 'stream-cursor';
@@ -1666,17 +1715,10 @@ async function readStream(response, streamDiv) {
 }
 
 // ── Quick reply chips ──
-const CHIPS = [
-  'Go deeper',
-  'Different approach',
-  "What's the first step?",
-  'Give me an example'
-];
+const CHIPS = ['Go deeper', 'Different approach', "What's the first step?", 'Give me an example'];
 
 function showChips(parentDiv, replyText) {
-  // Pick 3 chips
   const picks = [...CHIPS].sort(() => Math.random() - 0.5).slice(0, 3);
-
   const row = document.createElement('div');
   row.className = 'chip-row';
 
@@ -1702,9 +1744,9 @@ function renderMessage(role, content, scroll = true) {
   const isError = role === 'error';
   div.className = `msg ${isError ? 'msg-error' : role}`;
 
-  const prefix = role === 'user' ? '> YOU' : isError ? '✕ ERROR' : '◈ ADVISOR';
+  const label = role === 'user' ? 'You' : isError ? 'Error' : 'simper~decide';
   div.innerHTML = `
-    <div class="msg-prefix">${prefix}</div>
+    <div class="msg-label">${label}</div>
     <div class="msg-body">${formatContent(content)}</div>`;
 
   area.appendChild(div);
@@ -1717,20 +1759,16 @@ function formatContent(text) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Domain badge
   html = html.replace(/\[DOMAIN:\s*([^\]]+)\]/g,
     '<span class="domain-badge">$1</span><br>');
 
-  // TOP 3 PRO OPTIONS block
   if (html.includes('TOP 3 PRO OPTIONS')) {
     const parts = html.split('TOP 3 PRO OPTIONS:');
     if (parts.length === 2) {
       const before = parts[0];
       const raw = parts[1];
       const lines = raw.split('\n');
-      let items = '';
-      let after = '';
-      let inOptions = true;
+      let items = '', after = '', inOptions = true;
 
       lines.forEach(line => {
         const t = line.trim();
@@ -1743,21 +1781,19 @@ function formatContent(text) {
           </div>`;
         } else {
           inOptions = false;
-          after += `<div style="margin-top:10px;font-size:0.82rem;color:#aaa">${t}</div>`;
+          after += `<div style="margin-top:10px;font-size:0.84rem;color:var(--text-mid)">${t}</div>`;
         }
       });
 
       html = before +
         `<div class="options-block">
-          <div class="options-title">▲ Top 3 Pro Options</div>
+          <div class="options-title">Top 3 Pro Options</div>
           ${items}
         </div>${after}`;
     }
   }
 
-  // Bold
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // Line breaks
   html = html.replace(/\n/g, '<br>');
   return html;
 }
@@ -1805,7 +1841,7 @@ async function openCamera() {
     document.getElementById('cameraFeed').srcObject = cameraStream;
   } catch (err) {
     closeCamera();
-    renderMessage('error', '[CAMERA] Could not access camera: ' + err.message);
+    renderMessage('error', 'Camera error: ' + err.message);
   }
 }
 
@@ -1900,7 +1936,7 @@ Then ask if they want to go deeper on any area.`,
 
   } catch (err) {
     streamDiv.remove();
-    renderMessage('error', `[ERROR] ${err.message}`);
+    renderMessage('error', 'Analysis error: ' + err.message);
   } finally {
     isLoading = false;
     document.getElementById('sendBtn').disabled = false;
