@@ -1,7 +1,7 @@
 {
   "appId": "com.cadger808.simperdecide",
   "appName": "simper~decide",
-  "webDir": ".",
+  "webDir": "www",
   "server": {
     "androidScheme": "https"
   },

@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>simper~decide</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #00ff41;
+      --green-dim: #00aa2a;
+      --amber: #ffb000;
+      --red: #ff3c3c;
+      --bg: #000000;
+      --bg2: #080808;
+      --border: #1a1a1a;
+      --glow: 0 0 10px #00ff41, 0 0 22px #00ff4133;
+      --glow-amber: 0 0 10px #ffb000, 0 0 22px #ffb00033;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* CRT scanlines */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* CRT vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.5) 100%);
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--green-dim);
+      background: var(--bg);
+    }
+
+    .logo {
+      font-size: 1.35rem;
+      font-weight: bold;
+      text-shadow: var(--glow);
+      letter-spacing: 3px;
+    }
+    .logo span { color: var(--amber); }
+
+    .header-btns { display: flex; gap: 8px; }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.72rem;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-icon:hover {
+      background: var(--green);
+      color: var(--bg);
+      box-shadow: var(--glow);
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: flex;
+      height: calc(100vh - 48px);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 190px;
+      border-right: 1px solid var(--green-dim);
+      overflow-y: auto;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    .sidebar-title {
+      font-size: 0.62rem;
+      color: var(--green-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .session-item {
+      padding: 7px 8px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 0.7rem;
+      line-height: 1.4;
+      color: var(--green-dim);
+      transition: all 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .session-item:hover, .session-item.active {
+      border-color: var(--green-dim);
+      color: var(--green);
+      background: rgba(0,255,65,0.04);
+    }
+    .session-item .session-date {
+      font-size: 0.58rem;
+      color: #444;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .new-session-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--green-dim);
+      color: var(--green-dim);
+      font-family: inherit;
+      font-size: 0.68rem;
+      padding: 6px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    .new-session-btn:hover { color: var(--green); border-color: var(--green); }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .chat-area::-webkit-scrollbar { width: 4px; }
+    .chat-area::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    /* ── Welcome ── */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      text-align: center;
+      min-height: 100%;
+    }
+
+    .welcome-logo {
+      font-size: 2.2rem;
+      text-shadow: var(--glow);
+      margin-bottom: 8px;
+      letter-spacing: 4px;
+    }
+    .welcome-logo span { color: var(--amber); }
+
+    .welcome-sub {
+      font-size: 0.72rem;
+      color: var(--green-dim);
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .welcome-tagline {
+      font-size: 0.68rem;
+      color: #444;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    .domain-groups { width: 100%; max-width: 580px; }
+
+    .domain-group-label {
+      font-size: 0.58rem;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 10px 0 6px;
+      text-align: left;
+    }
+
+    .quick-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .quick-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: #555;
+      font-family: inherit;
+      font-size: 0.68rem;
+      padding: 5px 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .quick-btn:hover {
+      color: var(--green);
+      border-color: var(--green-dim);
+      background: rgba(0,255,65,0.04);
+    }
+    .quick-btn.special {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+    .quick-btn.special:hover {
+      background: rgba(255,176,0,0.08);
+      box-shadow: var(--glow-amber);
+    }
+
+    /* ── Messages ── */
+    .msg { margin-bottom: 16px; line-height: 1.6; }
+
+    .msg-prefix {
+      font-size: 0.65rem;
+      color: var(--green-dim);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .msg.user .msg-prefix { color: var(--amber); }
+
+    .msg-body {
+      font-size: 0.86rem;
+      padding: 10px 14px;
+      border-left: 2px solid var(--green-dim);
+      background: rgba(0,255,65,0.025);
+    }
+    .msg.user .msg-body {
+      border-left-color: var(--amber);
+      background: rgba(255,176,0,0.025);
+      color: #ccc;
+    }
+
+    /* ── Options block ── */
+    .options-block {
+      border: 1px solid var(--green);
+      padding: 14px;
+      margin-top: 10px;
+      box-shadow: var(--glow);
+    }
+    .options-title {
+      font-size: 0.7rem;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .option-item {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.84rem;
+    }
+    .option-item:last-child { border-bottom: none; }
+    .option-num { color: var(--amber); margin-right: 6px; }
+    .option-name { color: var(--green); }
+
+    /* ── Domain badge ── */
+    .domain-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      padding: 2px 8px;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      border-top: 1px solid var(--green-dim);
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      background: var(--bg);
+    }
+
+    textarea {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.86rem;
+      padding: 9px 12px;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      min-height: 42px;
+      max-height: 120px;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--green); box-shadow: 0 0 8px rgba(0,255,65,0.15); }
+    textarea::placeholder { color: #2a2a2a; }
+
+    .send-btn {
+      background: var(--green);
+      color: var(--bg);
+      border: none;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: bold;
+      padding: 10px 16px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .send-btn:hover { box-shadow: var(--glow); }
+    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+    .cam-btn {
+      background: transparent;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cam-btn:hover { box-shadow: var(--glow-amber); }
+
+    /* ── Typing indicator ── */
+    .typing {
+      display: flex;
+      gap: 5px;
+      padding: 12px 14px;
+      border-left: 2px solid var(--green-dim);
+      background: rgba(0,255,65,0.025);
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--green);
+      display: inline-block;
+      animation: blink 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.15; }
+      40% { opacity: 1; }
+    }
+
+    /* ── Modals ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      border: 1px solid var(--green);
+      box-shadow: var(--glow);
+      padding: 24px;
+      width: 92%;
+      max-width: 460px;
+    }
+
+    .modal-title {
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+      color: var(--amber);
+    }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 0.66rem;
+      color: var(--green-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.84rem;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .field input:focus { border-color: var(--green); }
+
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+    /* Camera modal */
+    .cam-modal video {
+      width: 100%;
+      border: 1px solid var(--green-dim);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* Error msg */
+    .msg-error .msg-body {
+      border-left-color: var(--red);
+      color: var(--red);
+    }
+
+    /* ── Profile avatar ── */
+    .profile-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--amber);
+      object-fit: cover;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .profile-avatar:hover { box-shadow: var(--glow-amber); }
+    .profile-avatar-placeholder {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px dashed var(--amber);
+      background: transparent;
+      color: var(--amber);
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .profile-avatar-placeholder:hover { box-shadow: var(--glow-amber); }
+
+    /* ── Profile modal ── */
+    .profile-photo-area {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    }
+    .profile-photo-preview {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--amber);
+      object-fit: cover;
+      display: none;
+    }
+    .profile-photo-preview.visible { display: block; }
+    .profile-photo-placeholder {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 2px dashed var(--amber);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--amber); font-size: 1.4rem; cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .profile-photo-placeholder:hover { box-shadow: var(--glow-amber); }
+    .photo-btns { display: flex; flex-direction: column; gap: 6px; }
+
+    .field textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.84rem;
+      padding: 8px 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .field textarea:focus { border-color: var(--green); }
+
+    /* ── Share toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--green);
+      color: #000;
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 8px 20px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 9000;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Mobile */
+    @media (max-width: 560px) {
+      .sidebar { width: 130px; }
+      .logo { font-size: 1.05rem; }
+      .domain-group-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Consent Modal -->
+<div class="modal-overlay" id="consentModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">// Data &amp; Privacy Consent</div>
+    <p style="font-size:0.8rem;line-height:1.7;color:#aaa;margin-bottom:14px">
+      Before using <strong style="color:var(--green)">simper~decide</strong>, please review how your data is handled:
+    </p>
+    <div style="font-size:0.75rem;line-height:1.8;border:1px solid var(--border);padding:12px;margin-bottom:16px">
+      <div style="color:var(--amber);margin-bottom:6px;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase">What is stored (locally on your device only)</div>
+      <div>🔑 <strong>API Key</strong> — your Claude API key, stored in browser localStorage</div>
+      <div>👤 <strong>Profile</strong> — name, age, location, background, photo (optional)</div>
+      <div>💬 <strong>Sessions</strong> — up to 5 chat sessions saved locally</div>
+      <div style="margin-top:10px;color:var(--amber);margin-bottom:6px;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase">What is NOT stored</div>
+      <div>✕ No data is sent to any server except Anthropic's Claude API</div>
+      <div>✕ No tracking, no analytics, no third-party services</div>
+      <div>✕ Camera photos are processed in-memory only — not saved to disk</div>
+    </div>
+    <p style="font-size:0.72rem;color:#555;margin-bottom:16px">
+      You can view or delete all stored data at any time via Settings → My Data.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-icon" style="color:#555;border-color:#333" onclick="declineConsent()">Decline</button>
+      <button class="btn-icon" style="background:var(--green);color:#000" onclick="acceptConsent()">I Agree — Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- My Data Modal -->
+<div class="modal-overlay" id="dataModal">
+  <div class="modal" style="max-width:500px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">// My Data</div>
+    <div id="dataSummary" style="font-size:0.78rem;line-height:1.8"></div>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;margin-top:16px">
+      <button class="btn-icon" style="color:var(--red);border-color:var(--red)" onclick="clearAllData()">✕ Delete All Data</button>
+      <button class="btn-icon" onclick="closeDataModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-title">// My Profile</div>
+    <div class="profile-photo-area">
+      <div>
+        <div class="profile-photo-placeholder" id="profilePhotoPlaceholder" onclick="document.getElementById('profilePhotoFile').click()">👤</div>
+        <img class="profile-photo-preview" id="profilePhotoPreview" src="" alt="profile">
+      </div>
+      <div class="photo-btns">
+        <button class="btn-icon" onclick="document.getElementById('profilePhotoFile').click()">↑ Upload Photo</button>
+        <button class="btn-icon" onclick="openProfileCamera()">📷 Take Photo</button>
+        <button class="btn-icon" style="color:#555;border-color:#333" onclick="clearProfilePhoto()">✕ Remove</button>
+      </div>
+      <input type="file" id="profilePhotoFile" accept="image/*" style="display:none" onchange="handleProfilePhotoUpload(event)">
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="profileName" placeholder="Your name">
+    </div>
+    <div class="field">
+      <label>Age</label>
+      <input type="number" id="profileAge" placeholder="e.g. 34" min="1" max="120">
+    </div>
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="profileLocation" placeholder="City, State or Country">
+    </div>
+    <div class="field">
+      <label>Background / Context</label>
+      <textarea id="profileBackground" placeholder="Brief background — job, family situation, goals, anything relevant the advisor should know about you..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeProfile()">Cancel</button>
+      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="saveProfile()">Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Camera Modal -->
+<div class="modal-overlay" id="profileCameraModal">
+  <div class="modal cam-modal">
+    <div class="modal-title">// Take Profile Photo</div>
+    <video id="profileCameraFeed" autoplay playsinline></video>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeProfileCamera()">Cancel</button>
+      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="captureProfilePhoto()">📷 Capture</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">// Settings</div>
+    <div class="field">
+      <label>Claude API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+    </div>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px">
+      <button class="btn-icon" style="color:#555;border-color:#333;margin-right:auto" onclick="openDataModal()">My Data</button>
+      <button class="btn-icon" onclick="closeSettings()">Cancel</button>
+      <button class="btn-icon" style="background:var(--green);color:#000" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal-overlay" id="cameraModal">
+  <div class="modal cam-modal">
+    <div class="modal-title">// Appearance Analysis</div>
+    <video id="cameraFeed" autoplay playsinline></video>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeCamera()">Cancel</button>
+      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="captureAndAnalyze()">▶ Analyze</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">simper<span>~</span>decide</div>
+  <div class="header-btns">
+    <button class="btn-icon" onclick="newSession()">+ New</button>
+    <button class="btn-icon" onclick="shareApp()">⇧ Share</button>
+    <button class="btn-icon" onclick="openSettings()">⚙ Settings</button>
+    <div id="profileAvatarWrap" onclick="openProfile()" title="My Profile">
+      <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder">👤</div>
+      <img class="profile-avatar" id="profileAvatarImg" src="" alt="profile" style="display:none">
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-title">Sessions</div>
+    <div id="sessionList"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="chat-area" id="chatArea">
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-logo">simper<span>~</span>decide</div>
+        <div class="welcome-sub">your universal AI advisor</div>
+        <div class="welcome-tagline">everyday decisions · any problem · pro options · no fluff</div>
+
+        <div class="domain-groups">
+          <div class="domain-group-label">Law &amp; Money</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need legal advice')">Legal</button>
+            <button class="quick-btn" onclick="quickStart('I need financial advice')">Financial</button>
+            <button class="quick-btn" onclick="quickStart('I need tax help')">Taxes</button>
+            <button class="quick-btn" onclick="quickStart('I need insurance guidance')">Insurance</button>
+            <button class="quick-btn" onclick="quickStart('I need help with debt')">Debt</button>
+            <button class="quick-btn" onclick="quickStart('I need real estate advice')">Real Estate</button>
+          </div>
+
+          <div class="domain-group-label">Health &amp; Body</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need medical guidance')">Medical</button>
+            <button class="quick-btn" onclick="quickStart('I need mental health support')">Mental Health</button>
+            <button class="quick-btn" onclick="quickStart('I need fitness advice')">Fitness</button>
+            <button class="quick-btn" onclick="quickStart('I need nutrition guidance')">Nutrition</button>
+            <button class="quick-btn special" onclick="quickStart('How do I look?')">How do I look?</button>
+          </div>
+
+          <div class="domain-group-label">Work &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need career guidance')">Career</button>
+            <button class="quick-btn" onclick="quickStart('I need business advice')">Business</button>
+            <button class="quick-btn" onclick="quickStart('I need education guidance')">Education</button>
+            <button class="quick-btn" onclick="quickStart('I need help with relationships')">Relationships</button>
+            <button class="quick-btn" onclick="quickStart('I need parenting advice')">Parenting</button>
+            <button class="quick-btn" onclick="quickStart('I need family advice')">Family</button>
+          </div>
+
+          <div class="domain-group-label">Home &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need home improvement advice')">Home</button>
+            <button class="quick-btn" onclick="quickStart('I need travel advice')">Travel</button>
+            <button class="quick-btn" onclick="quickStart('I need pet advice')">Pets</button>
+            <button class="quick-btn" onclick="quickStart('I need auto or vehicle advice')">Auto</button>
+            <button class="quick-btn" onclick="quickStart('I need tech help')">Tech</button>
+            <button class="quick-btn" onclick="quickStart('I need retirement planning advice')">Retirement</button>
+          </div>
+
+          <div class="domain-group-label">Decisions</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need help making a big decision')">Big Decision</button>
+            <button class="quick-btn" onclick="quickStart('I need everyday advice')">General Advice</button>
+            <button class="quick-btn" onclick="quickStart('I need immigration guidance')">Immigration</button>
+            <button class="quick-btn" onclick="quickStart('I need spiritual or life guidance')">Spirituality</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <button class="cam-btn" onclick="openCamera()" title="Appearance analysis">📷</button>
+      <textarea id="userInput" placeholder="Describe your problem or ask anything..."
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are simper~decide — a sharp, no-fluff universal AI advisor. Your mission: solve everyday pain points. Decisions, problems, situations people don't know who to ask about.
+
+DOMAINS: Legal · Medical · Financial · Career · Relationships · Family · Parenting · Mental Health · Fitness · Nutrition · Business · Education · Real Estate · Taxes · Insurance · Debt · Home · Travel · Pets · Auto · Tech · Retirement · Immigration · Spirituality · General
+
+YOUR FLOW:
+1. When the user describes a problem, silently identify the domain.
+2. ALWAYS start by asking ONE clarifying question — no exceptions. Even if the problem seems clear, seek clarification first. You must understand the full situation before advising.
+3. After each answer, ask the next most important clarifying question. Keep going until you have a complete picture (minimum 3 clarifying questions, maximum 5).
+4. Only after sufficient clarification, deliver TOP 3 PRO OPTIONS.
+5. Format options EXACTLY like this:
+
+[DOMAIN: Legal]
+
+TOP 3 PRO OPTIONS:
+① [Option name] — [one line: what it is + key consideration]
+② [Option name] — [one line: what it is + key consideration]
+③ [Option name] — [one line: what it is + key consideration]
+
+Then ask: "Want to go deeper on any of these, or move to the next step?"
+
+RULES:
+- ONE clarifying question at a time. Always. Never skip clarification. Never stack questions.
+- Never assume you know enough — always seek clarification before advising.
+- Each clarifying question should dig deeper: who, what, when, where, why, how much, what outcome they want.
+- Personal topics = professional advice only. No personal opinions or judgements.
+- Always give exactly 3 options when ready — never more, never fewer.
+- Keep drilling until the problem is fully resolved.
+- After delivering options, ask a follow-up clarifying question to go deeper.
+- If user asks anything about their appearance, how they look, style, grooming → respond ONLY with: [CAMERA_NEEDED]
+- Be direct. No filler. No "Great question!" No unnecessary disclaimers.
+- Tone: sharp, confident, like a knowledgeable friend who happens to know everything professionally.
+- Never suggest the user "consult a professional" as a cop-out — BE the professional guidance.`;
+
+let sessions = [];
+let currentSessionId = null;
+let isLoading = false;
+let cameraStream = null;
+let profileCameraStream = null;
+
+// ── Init ──
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+  if (!localStorage.getItem('sd_consent')) {
+    document.getElementById('consentModal').classList.add('open');
+    return;
+  }
+  initApp();
+});
+
+function initApp() {
+  loadSessions();
+  renderSessionList();
+  loadProfileAvatar();
+  if (!localStorage.getItem('sd_api_key')) openSettings();
+}
+
+// ── Consent ──
+function acceptConsent() {
+  localStorage.setItem('sd_consent', '1');
+  document.getElementById('consentModal').classList.remove('open');
+  initApp();
+}
+
+function declineConsent() {
+  document.getElementById('consentModal').classList.remove('open');
+  document.getElementById('chatArea').innerHTML =
+    '<div style="padding:32px;text-align:center;color:#555;font-size:0.8rem">Data consent declined.<br>Refresh to reconsider.</div>';
+}
+
+// ── My Data ──
+function openDataModal() {
+  closeSettings();
+  const apiKey = localStorage.getItem('sd_api_key');
+  const profile = getProfile();
+  const sessionCount = sessions.length;
+  const totalMessages = sessions.reduce((n, s) => n + s.messages.length, 0);
+
+  let html = `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Stored Data Summary</div>`;
+
+  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
+  html += `<div>🔑 <strong>API Key:</strong> ${apiKey ? '••••••••' + apiKey.slice(-6) : 'Not set'}</div>`;
+  html += `</div>`;
+
+  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
+  html += `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Profile</div>`;
+  html += `<div>Name: ${profile.name || '—'}</div>`;
+  html += `<div>Age: ${profile.age || '—'}</div>`;
+  html += `<div>Location: ${profile.location || '—'}</div>`;
+  html += `<div>Background: ${profile.background ? profile.background.substring(0, 60) + (profile.background.length > 60 ? '…' : '') : '—'}</div>`;
+  html += `<div>Photo: ${profile.photo ? '✓ Saved (' + Math.round(profile.photo.length * 0.75 / 1024) + ' KB)' : '—'}</div>`;
+  html += `</div>`;
+
+  html += `<div style="border:1px solid var(--border);padding:10px;margin-bottom:10px">`;
+  html += `<div style="color:var(--amber);font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Sessions</div>`;
+  html += `<div>${sessionCount} session(s) · ${totalMessages} total messages</div>`;
+  sessions.forEach((s, i) => {
+    html += `<div style="color:#555;font-size:0.7rem;margin-top:4px">${i+1}. ${s.title} (${s.date})</div>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="font-size:0.68rem;color:#444;margin-top:8px">All data stored locally in browser. Nothing sent to external servers except Anthropic's Claude API during active chats.</div>`;
+
+  document.getElementById('dataSummary').innerHTML = html;
+  document.getElementById('dataModal').classList.add('open');
+}
+
+function closeDataModal() {
+  document.getElementById('dataModal').classList.remove('open');
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL stored data? This cannot be undone.')) return;
+  localStorage.clear();
+  sessions = [];
+  currentSessionId = null;
+  showToast('All data deleted');
+  closeDataModal();
+  location.reload();
+}
+
+// ── Profile ──
+function getProfile() {
+  const p = localStorage.getItem('sd_profile');
+  return p ? JSON.parse(p) : {};
+}
+
+function buildSystemPrompt() {
+  const p = getProfile();
+  let context = '';
+  if (p.name || p.age || p.location || p.background) {
+    context = '\n\nUSER PROFILE (use this context to personalize all advice):\n';
+    if (p.name) context += `Name: ${p.name}\n`;
+    if (p.age) context += `Age: ${p.age}\n`;
+    if (p.location) context += `Location: ${p.location}\n`;
+    if (p.background) context += `Background: ${p.background}\n`;
+  }
+  return SYSTEM_PROMPT + context;
+}
+
+function loadProfileAvatar() {
+  const p = getProfile();
+  if (p.photo) {
+    document.getElementById('profileAvatarImg').src = p.photo;
+    document.getElementById('profileAvatarImg').style.display = 'block';
+    document.getElementById('profileAvatarPlaceholder').style.display = 'none';
+  }
+}
+
+function openProfile() {
+  const p = getProfile();
+  document.getElementById('profileName').value = p.name || '';
+  document.getElementById('profileAge').value = p.age || '';
+  document.getElementById('profileLocation').value = p.location || '';
+  document.getElementById('profileBackground').value = p.background || '';
+  if (p.photo) {
+    document.getElementById('profilePhotoPreview').src = p.photo;
+    document.getElementById('profilePhotoPreview').classList.add('visible');
+    document.getElementById('profilePhotoPlaceholder').style.display = 'none';
+  } else {
+    document.getElementById('profilePhotoPreview').classList.remove('visible');
+    document.getElementById('profilePhotoPlaceholder').style.display = 'flex';
+  }
+  document.getElementById('profileModal').classList.add('open');
+}
+
+function closeProfile() {
+  document.getElementById('profileModal').classList.remove('open');
+}
+
+function saveProfile() {
+  const p = getProfile();
+  p.name = document.getElementById('profileName').value.trim();
+  p.age = document.getElementById('profileAge').value.trim();
+  p.location = document.getElementById('profileLocation').value.trim();
+  p.background = document.getElementById('profileBackground').value.trim();
+  localStorage.setItem('sd_profile', JSON.stringify(p));
+  loadProfileAvatar();
+  closeProfile();
+  showToast('Profile saved');
+}
+
+function handleProfilePhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => setProfilePhoto(ev.target.result);
+  reader.readAsDataURL(file);
+}
+
+function setProfilePhoto(dataUrl) {
+  document.getElementById('profilePhotoPreview').src = dataUrl;
+  document.getElementById('profilePhotoPreview').classList.add('visible');
+  document.getElementById('profilePhotoPlaceholder').style.display = 'none';
+  const p = getProfile();
+  p.photo = dataUrl;
+  localStorage.setItem('sd_profile', JSON.stringify(p));
+  loadProfileAvatar();
+}
+
+function clearProfilePhoto() {
+  document.getElementById('profilePhotoPreview').classList.remove('visible');
+  document.getElementById('profilePhotoPlaceholder').style.display = 'flex';
+  const p = getProfile();
+  delete p.photo;
+  localStorage.setItem('sd_profile', JSON.stringify(p));
+  document.getElementById('profileAvatarImg').style.display = 'none';
+  document.getElementById('profileAvatarPlaceholder').style.display = 'flex';
+}
+
+async function openProfileCamera() {
+  document.getElementById('profileCameraModal').classList.add('open');
+  try {
+    profileCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    document.getElementById('profileCameraFeed').srcObject = profileCameraStream;
+  } catch (err) {
+    closeProfileCamera();
+    showToast('Camera error: ' + err.message);
+  }
+}
+
+function closeProfileCamera() {
+  document.getElementById('profileCameraModal').classList.remove('open');
+  if (profileCameraStream) {
+    profileCameraStream.getTracks().forEach(t => t.stop());
+    profileCameraStream = null;
+  }
+}
+
+function captureProfilePhoto() {
+  const video = document.getElementById('profileCameraFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  closeProfileCamera();
+  setProfilePhoto(dataUrl);
+}
+
+// ── Share ──
+function shareApp() {
+  const url = 'https://cadger808.github.io/simper-decide';
+  const text = 'simper~decide — AI advisor for any problem. Top 3 pro options. No fluff.';
+  if (navigator.share) {
+    navigator.share({ title: 'simper~decide', text, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => showToast(url));
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Sessions ──
+function loadSessions() {
+  const stored = localStorage.getItem('sd_sessions');
+  sessions = stored ? JSON.parse(stored) : [];
+}
+
+function saveSessions() {
+  localStorage.setItem('sd_sessions', JSON.stringify(sessions));
+}
+
+function newSession() {
+  currentSessionId = Date.now().toString();
+  sessions.unshift({
+    id: currentSessionId,
+    title: 'New session',
+    date: new Date().toLocaleDateString(),
+    messages: []
+  });
+  if (sessions.length > 5) sessions = sessions.slice(0, 5);
+  saveSessions();
+  renderSessionList();
+  clearChat(true);
+}
+
+function loadSession(id) {
+  currentSessionId = id;
+  const session = sessions.find(s => s.id === id);
+  if (!session) return;
+  clearChat(false);
+  session.messages.forEach(m => renderMessage(m.role, m.content, false));
+  renderSessionList();
+  document.getElementById('chatArea').scrollTop = 9999;
+}
+
+function getSession() {
+  return sessions.find(s => s.id === currentSessionId);
+}
+
+function updateSessionTitle(text) {
+  const session = getSession();
+  if (session && session.title === 'New session') {
+    session.title = text.substring(0, 26) + (text.length > 26 ? '…' : '');
+    saveSessions();
+    renderSessionList();
+  }
+}
+
+function renderSessionList() {
+  const list = document.getElementById('sessionList');
+  list.innerHTML = '';
+  sessions.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
+    el.innerHTML = `${s.title}<span class="session-date">${s.date}</span>`;
+    el.onclick = () => loadSession(s.id);
+    list.appendChild(el);
+  });
+}
+
+function clearChat(showWelcome) {
+  const area = document.getElementById('chatArea');
+  if (showWelcome) {
+    area.innerHTML = `
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-logo">simper<span>~</span>decide</div>
+        <div class="welcome-sub">your universal AI advisor</div>
+        <div class="welcome-tagline">everyday decisions · any problem · pro options · no fluff</div>
+        <div class="domain-groups">
+          <div class="domain-group-label">Law &amp; Money</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need legal advice')">Legal</button>
+            <button class="quick-btn" onclick="quickStart('I need financial advice')">Financial</button>
+            <button class="quick-btn" onclick="quickStart('I need tax help')">Taxes</button>
+            <button class="quick-btn" onclick="quickStart('I need insurance guidance')">Insurance</button>
+            <button class="quick-btn" onclick="quickStart('I need help with debt')">Debt</button>
+            <button class="quick-btn" onclick="quickStart('I need real estate advice')">Real Estate</button>
+          </div>
+          <div class="domain-group-label">Health &amp; Body</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need medical guidance')">Medical</button>
+            <button class="quick-btn" onclick="quickStart('I need mental health support')">Mental Health</button>
+            <button class="quick-btn" onclick="quickStart('I need fitness advice')">Fitness</button>
+            <button class="quick-btn" onclick="quickStart('I need nutrition guidance')">Nutrition</button>
+            <button class="quick-btn special" onclick="quickStart('How do I look?')">How do I look?</button>
+          </div>
+          <div class="domain-group-label">Work &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need career guidance')">Career</button>
+            <button class="quick-btn" onclick="quickStart('I need business advice')">Business</button>
+            <button class="quick-btn" onclick="quickStart('I need education guidance')">Education</button>
+            <button class="quick-btn" onclick="quickStart('I need help with relationships')">Relationships</button>
+            <button class="quick-btn" onclick="quickStart('I need parenting advice')">Parenting</button>
+            <button class="quick-btn" onclick="quickStart('I need family advice')">Family</button>
+          </div>
+          <div class="domain-group-label">Home &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need home improvement advice')">Home</button>
+            <button class="quick-btn" onclick="quickStart('I need travel advice')">Travel</button>
+            <button class="quick-btn" onclick="quickStart('I need pet advice')">Pets</button>
+            <button class="quick-btn" onclick="quickStart('I need auto or vehicle advice')">Auto</button>
+            <button class="quick-btn" onclick="quickStart('I need tech help')">Tech</button>
+            <button class="quick-btn" onclick="quickStart('I need retirement planning advice')">Retirement</button>
+          </div>
+          <div class="domain-group-label">Decisions</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need help making a big decision')">Big Decision</button>
+            <button class="quick-btn" onclick="quickStart('I need everyday advice')">General Advice</button>
+            <button class="quick-btn" onclick="quickStart('I need immigration guidance')">Immigration</button>
+            <button class="quick-btn" onclick="quickStart('I need spiritual or life guidance')">Spirituality</button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+// ── Messaging ──
+async function sendMessage(overrideText) {
+  if (isLoading) return;
+  const apiKey = localStorage.getItem('sd_api_key');
+  if (!apiKey) { openSettings(); return; }
+
+  const input = document.getElementById('userInput');
+  const text = overrideText || input.value.trim();
+  if (!text) return;
+
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  if (!currentSessionId) newSession();
+
+  input.value = '';
+  autoResize(input);
+
+  const session = getSession();
+  session.messages.push({ role: 'user', content: text });
+  updateSessionTitle(text);
+  saveSessions();
+  renderMessage('user', text);
+
+  const typingEl = showTyping();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: buildSystemPrompt(),
+        messages: session.messages.map(m => ({ role: m.role, content: m.content }))
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error ' + response.status);
+    }
+
+    const data = await response.json();
+    const reply = data.content[0].text;
+    typingEl.remove();
+
+    if (reply.trim() === '[CAMERA_NEEDED]') {
+      const p = getProfile();
+      if (p.photo) {
+        // Auto-use saved profile photo
+        const base64 = p.photo.split(',')[1];
+        const mediaType = p.photo.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+        const msg = 'Using your profile photo for appearance analysis...';
+        session.messages.push({ role: 'assistant', content: msg });
+        saveSessions();
+        renderMessage('assistant', msg);
+        await analyzeAppearanceWithPhoto(base64, mediaType);
+      } else {
+        openCamera();
+        const msg = 'Opening camera for appearance analysis...';
+        session.messages.push({ role: 'assistant', content: msg });
+        saveSessions();
+        renderMessage('assistant', msg);
+      }
+    } else {
+      session.messages.push({ role: 'assistant', content: reply });
+      saveSessions();
+      renderMessage('assistant', reply);
+    }
+
+  } catch (err) {
+    typingEl.remove();
+    renderMessage('error', `[ERROR] ${err.message}`);
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function renderMessage(role, content, scroll = true) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  const isError = role === 'error';
+  div.className = `msg ${isError ? 'msg-error' : role}`;
+
+  const prefix = role === 'user' ? '> YOU' : isError ? '✕ ERROR' : '◈ ADVISOR';
+  div.innerHTML = `
+    <div class="msg-prefix">${prefix}</div>
+    <div class="msg-body">${formatContent(content)}</div>`;
+
+  area.appendChild(div);
+  if (scroll) area.scrollTop = area.scrollHeight;
+}
+
+function formatContent(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Domain badge
+  html = html.replace(/\[DOMAIN:\s*([^\]]+)\]/g,
+    '<span class="domain-badge">$1</span><br>');
+
+  // TOP 3 PRO OPTIONS block
+  if (html.includes('TOP 3 PRO OPTIONS')) {
+    const parts = html.split('TOP 3 PRO OPTIONS:');
+    if (parts.length === 2) {
+      const before = parts[0];
+      const raw = parts[1];
+      const lines = raw.split('\n');
+      let items = '';
+      let after = '';
+      let inOptions = true;
+
+      lines.forEach(line => {
+        const t = line.trim();
+        if (!t) return;
+        const m = t.match(/^[①②③]\s*(.+?)\s*[—-]\s*(.+)$/);
+        if (m && inOptions) {
+          items += `<div class="option-item">
+            <span class="option-num">▶</span>
+            <span class="option-name">${m[1]}</span> — ${m[2]}
+          </div>`;
+        } else {
+          inOptions = false;
+          after += `<div style="margin-top:10px;font-size:0.82rem;color:#aaa">${t}</div>`;
+        }
+      });
+
+      html = before +
+        `<div class="options-block">
+          <div class="options-title">▲ Top 3 Pro Options</div>
+          ${items}
+        </div>${after}`;
+    }
+  }
+
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Line breaks
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+function showTyping() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `
+    <div class="msg-prefix">◈ ADVISOR</div>
+    <div class="typing"><span></span><span></span><span></span></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+function quickStart(text) {
+  if (!currentSessionId) newSession();
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+  sendMessage(text);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── Settings ──
+function openSettings() {
+  document.getElementById('apiKeyInput').value = localStorage.getItem('sd_api_key') || '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) localStorage.setItem('sd_api_key', key);
+  closeSettings();
+}
+
+// ── Camera ──
+async function openCamera() {
+  document.getElementById('cameraModal').classList.add('open');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    document.getElementById('cameraFeed').srcObject = cameraStream;
+  } catch (err) {
+    closeCamera();
+    renderMessage('error', '[CAMERA] Could not access camera: ' + err.message);
+  }
+}
+
+function closeCamera() {
+  document.getElementById('cameraModal').classList.remove('open');
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+async function captureAndAnalyze() {
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  const p = getProfile();
+  if (!p.photo) setProfilePhoto(dataUrl);
+  closeCamera();
+  await analyzeAppearanceWithPhoto(dataUrl.split(',')[1], 'image/jpeg');
+}
+
+async function analyzeAppearanceWithPhoto(base64, mediaType = 'image/jpeg') {
+  const apiKey = localStorage.getItem('sd_api_key');
+  if (!apiKey) { openSettings(); return; }
+  if (!currentSessionId) newSession();
+
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  const session = getSession();
+  if (!session.messages.find(m => m.content.includes('[photo'))) {
+    session.messages.push({ role: 'user', content: 'How do I look? [photo captured]' });
+    updateSessionTitle('Appearance analysis');
+    saveSessions();
+    renderMessage('user', 'How do I look? [photo captured]');
+  }
+
+  const typingEl = showTyping();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 1024,
+        system: `You are simper~decide's appearance advisor. Analyze the person's look professionally and constructively. Give TOP 3 specific, actionable style or grooming recommendations. Be honest but kind. Format exactly:
+
+[DOMAIN: Appearance]
+
+TOP 3 PRO OPTIONS:
+① [First recommendation] — [specific actionable detail]
+② [Second recommendation] — [specific actionable detail]
+③ [Third recommendation] — [specific actionable detail]
+
+Then ask if they want to go deeper on any area.`,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: 'Analyze my appearance and give me your top 3 professional recommendations.' }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error ' + response.status);
+    }
+
+    const data = await response.json();
+    const reply = data.content[0].text;
+    typingEl.remove();
+    session.messages.push({ role: 'assistant', content: reply });
+    saveSessions();
+    renderMessage('assistant', reply);
+
+  } catch (err) {
+    typingEl.remove();
+    renderMessage('error', `[ERROR] ${err.message}`);
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>

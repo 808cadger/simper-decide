@@ -26,6 +26,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Prepare web assets
+        run: mkdir -p www/icons && cp index.html manifest.json sw.js www/ && cp icons/icon-192.png icons/icon-512.png www/icons/
+
+      - name: Add Android platform
+        run: npx cap add android
+
       - name: Capacitor sync
         run: npx cap sync android
 
