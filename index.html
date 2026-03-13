@@ -112,6 +112,36 @@
 
     .header-btns { display: flex; gap: 6px; align-items: center; }
 
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.3rem;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+      border-radius: var(--r-sm);
+      transition: all 0.2s;
+      display: none;
+      align-items: center;
+      margin-right: 2px;
+    }
+    .back-btn.visible { display: flex; }
+    .back-btn:hover { background: rgba(167,139,250,0.12); }
+
+    .modal-back {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0 8px 0 0;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .modal-back:hover { opacity: 0.7; }
+
     .btn-pill {
       background: var(--glass);
       border: 1px solid var(--glass-border);
@@ -564,7 +594,24 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      display: flex;
+      align-items: center;
     }
+    .modal-title .modal-back {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0 8px 0 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: opacity 0.2s;
+    }
+    .modal-title .modal-back:hover { opacity: 0.6; }
 
     .field { margin-bottom: 14px; }
     .field label {
@@ -715,7 +762,7 @@
 <!-- Consent Modal -->
 <div class="modal-overlay" id="consentModal">
   <div class="modal" style="max-width:480px">
-    <div class="modal-title">Privacy & Data Consent</div>
+    <div class="modal-title"><button class="modal-back" onclick="declineConsent()">←</button>Privacy & Data Consent</div>
     <p style="font-size:0.83rem;line-height:1.7;color:var(--text-mid);margin-bottom:16px">
       Before using <strong style="color:var(--accent)">simper~decide</strong>, here's exactly what happens with your data:
     </p>
@@ -740,7 +787,7 @@
 <!-- My Data Modal -->
 <div class="modal-overlay" id="dataModal">
   <div class="modal" style="max-width:480px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">My Data</div>
+    <div class="modal-title"><button class="modal-back" onclick="closeDataModal()">←</button>My Data</div>
     <div id="dataSummary" style="font-size:0.8rem;line-height:1.8;color:var(--text-mid)"></div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn-danger" onclick="clearAllData()">Delete All Data</button>
@@ -752,7 +799,7 @@
 <!-- Profile Modal -->
 <div class="modal-overlay" id="profileModal">
   <div class="modal" style="max-height:90vh;overflow-y:auto">
-    <div class="modal-title">My Profile</div>
+    <div class="modal-title"><button class="modal-back" onclick="closeProfile()">←</button>My Profile</div>
     <div class="profile-photo-area">
       <div>
         <div class="profile-photo-placeholder" id="profilePhotoPlaceholder" onclick="document.getElementById('profilePhotoFile').click()">👤</div>
@@ -782,7 +829,7 @@
 <!-- Profile Camera Modal -->
 <div class="modal-overlay" id="profileCameraModal">
   <div class="modal cam-modal">
-    <div class="modal-title">Take Profile Photo</div>
+    <div class="modal-title"><button class="modal-back" onclick="closeProfileCamera()">←</button>Take Profile Photo</div>
     <video id="profileCameraFeed" autoplay playsinline></video>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeProfileCamera()">Cancel</button>
@@ -795,7 +842,7 @@
 <!-- Camera Modal -->
 <div class="modal-overlay" id="cameraModal">
   <div class="modal cam-modal">
-    <div class="modal-title">Appearance Analysis</div>
+    <div class="modal-title"><button class="modal-back" onclick="closeCamera()">←</button>Appearance Analysis</div>
     <video id="cameraFeed" autoplay playsinline></video>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeCamera()">Cancel</button>
@@ -807,6 +854,7 @@
 <!-- App Shell -->
 <div class="shell">
   <div class="header">
+    <button class="back-btn" id="backBtn" onclick="goHome()">←</button>
     <div class="logo">simper~decide</div>
     <div class="header-btns">
       <button class="btn-pill" onclick="newSession()">+ New</button>
@@ -1375,6 +1423,7 @@ function loadSession(id) {
   session.messages.forEach(m => renderMessage(m.role, m.content, false));
   renderSessionList();
   document.getElementById('chatArea').scrollTop = 9999;
+  document.getElementById('backBtn').classList.add('visible');
 }
 
 function getSession() {
@@ -1442,6 +1491,12 @@ function buildWelcomeHTML() {
 function clearChat(showWelcome) {
   const area = document.getElementById('chatArea');
   area.innerHTML = showWelcome ? buildWelcomeHTML() : '';
+  document.getElementById('backBtn').classList.toggle('visible', !showWelcome);
+}
+
+function goHome() {
+  currentSessionId = null;
+  clearChat(true);
 }
 
 // ── Messaging ──
@@ -1456,6 +1511,7 @@ async function sendMessage(overrideText) {
 
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
+  document.getElementById('backBtn').classList.add('visible');
 
   if (!currentSessionId) await newSession();
 
