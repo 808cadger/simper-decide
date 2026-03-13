@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>simper~decide</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #00ff41;
+      --green-dim: #00aa2a;
+      --amber: #ffb000;
+      --red: #ff3c3c;
+      --bg: #000000;
+      --bg2: #080808;
+      --border: #1a1a1a;
+      --glow: 0 0 10px #00ff41, 0 0 22px #00ff4133;
+      --glow-amber: 0 0 10px #ffb000, 0 0 22px #ffb00033;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* CRT scanlines */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* CRT vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.5) 100%);
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--green-dim);
+      background: var(--bg);
+    }
+
+    .logo {
+      font-size: 1.35rem;
+      font-weight: bold;
+      text-shadow: var(--glow);
+      letter-spacing: 3px;
+    }
+    .logo span { color: var(--amber); }
+
+    .header-btns { display: flex; gap: 8px; }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.72rem;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-icon:hover {
+      background: var(--green);
+      color: var(--bg);
+      box-shadow: var(--glow);
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: flex;
+      height: calc(100vh - 48px);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 190px;
+      border-right: 1px solid var(--green-dim);
+      overflow-y: auto;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    .sidebar-title {
+      font-size: 0.62rem;
+      color: var(--green-dim);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .session-item {
+      padding: 7px 8px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-size: 0.7rem;
+      line-height: 1.4;
+      color: var(--green-dim);
+      transition: all 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .session-item:hover, .session-item.active {
+      border-color: var(--green-dim);
+      color: var(--green);
+      background: rgba(0,255,65,0.04);
+    }
+    .session-item .session-date {
+      font-size: 0.58rem;
+      color: #444;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .new-session-btn {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--green-dim);
+      color: var(--green-dim);
+      font-family: inherit;
+      font-size: 0.68rem;
+      padding: 6px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    .new-session-btn:hover { color: var(--green); border-color: var(--green); }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .chat-area::-webkit-scrollbar { width: 4px; }
+    .chat-area::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    /* ── Welcome ── */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      text-align: center;
+      min-height: 100%;
+    }
+
+    .welcome-logo {
+      font-size: 2.2rem;
+      text-shadow: var(--glow);
+      margin-bottom: 8px;
+      letter-spacing: 4px;
+    }
+    .welcome-logo span { color: var(--amber); }
+
+    .welcome-sub {
+      font-size: 0.72rem;
+      color: var(--green-dim);
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .welcome-tagline {
+      font-size: 0.68rem;
+      color: #444;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    .domain-groups { width: 100%; max-width: 580px; }
+
+    .domain-group-label {
+      font-size: 0.58rem;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 10px 0 6px;
+      text-align: left;
+    }
+
+    .quick-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .quick-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: #555;
+      font-family: inherit;
+      font-size: 0.68rem;
+      padding: 5px 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .quick-btn:hover {
+      color: var(--green);
+      border-color: var(--green-dim);
+      background: rgba(0,255,65,0.04);
+    }
+    .quick-btn.special {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+    .quick-btn.special:hover {
+      background: rgba(255,176,0,0.08);
+      box-shadow: var(--glow-amber);
+    }
+
+    /* ── Messages ── */
+    .msg { margin-bottom: 16px; line-height: 1.6; }
+
+    .msg-prefix {
+      font-size: 0.65rem;
+      color: var(--green-dim);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .msg.user .msg-prefix { color: var(--amber); }
+
+    .msg-body {
+      font-size: 0.86rem;
+      padding: 10px 14px;
+      border-left: 2px solid var(--green-dim);
+      background: rgba(0,255,65,0.025);
+    }
+    .msg.user .msg-body {
+      border-left-color: var(--amber);
+      background: rgba(255,176,0,0.025);
+      color: #ccc;
+    }
+
+    /* ── Options block ── */
+    .options-block {
+      border: 1px solid var(--green);
+      padding: 14px;
+      margin-top: 10px;
+      box-shadow: var(--glow);
+    }
+    .options-title {
+      font-size: 0.7rem;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .option-item {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.84rem;
+    }
+    .option-item:last-child { border-bottom: none; }
+    .option-num { color: var(--amber); margin-right: 6px; }
+    .option-name { color: var(--green); }
+
+    /* ── Domain badge ── */
+    .domain-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      padding: 2px 8px;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      border-top: 1px solid var(--green-dim);
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      background: var(--bg);
+    }
+
+    textarea {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.86rem;
+      padding: 9px 12px;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      min-height: 42px;
+      max-height: 120px;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--green); box-shadow: 0 0 8px rgba(0,255,65,0.15); }
+    textarea::placeholder { color: #2a2a2a; }
+
+    .send-btn {
+      background: var(--green);
+      color: var(--bg);
+      border: none;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: bold;
+      padding: 10px 16px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .send-btn:hover { box-shadow: var(--glow); }
+    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+    .cam-btn {
+      background: transparent;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      font-family: inherit;
+      font-size: 0.78rem;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cam-btn:hover { box-shadow: var(--glow-amber); }
+
+    /* ── Typing indicator ── */
+    .typing {
+      display: flex;
+      gap: 5px;
+      padding: 12px 14px;
+      border-left: 2px solid var(--green-dim);
+      background: rgba(0,255,65,0.025);
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--green);
+      display: inline-block;
+      animation: blink 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.15; }
+      40% { opacity: 1; }
+    }
+
+    /* ── Modals ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      border: 1px solid var(--green);
+      box-shadow: var(--glow);
+      padding: 24px;
+      width: 92%;
+      max-width: 460px;
+    }
+
+    .modal-title {
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+      color: var(--amber);
+    }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 0.66rem;
+      color: var(--green-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.84rem;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .field input:focus { border-color: var(--green); }
+
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+    /* Camera modal */
+    .cam-modal video {
+      width: 100%;
+      border: 1px solid var(--green-dim);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* Error msg */
+    .msg-error .msg-body {
+      border-left-color: var(--red);
+      color: var(--red);
+    }
+
+    /* Mobile */
+    @media (max-width: 560px) {
+      .sidebar { width: 130px; }
+      .logo { font-size: 1.05rem; }
+      .domain-group-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-title">// Settings</div>
+    <div class="field">
+      <label>Claude API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeSettings()">Cancel</button>
+      <button class="btn-icon" style="background:var(--green);color:#000" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modal-overlay" id="cameraModal">
+  <div class="modal cam-modal">
+    <div class="modal-title">// Appearance Analysis</div>
+    <video id="cameraFeed" autoplay playsinline></video>
+    <div class="modal-actions">
+      <button class="btn-icon" onclick="closeCamera()">Cancel</button>
+      <button class="btn-icon" style="background:var(--amber);color:#000" onclick="captureAndAnalyze()">▶ Analyze</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">simper<span>~</span>decide</div>
+  <div class="header-btns">
+    <button class="btn-icon" onclick="newSession()">+ New</button>
+    <button class="btn-icon" onclick="openSettings()">⚙ Settings</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-title">Sessions</div>
+    <div id="sessionList"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="chat-area" id="chatArea">
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-logo">simper<span>~</span>decide</div>
+        <div class="welcome-sub">your universal AI advisor</div>
+        <div class="welcome-tagline">everyday decisions · any problem · pro options · no fluff</div>
+
+        <div class="domain-groups">
+          <div class="domain-group-label">Law &amp; Money</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need legal advice')">Legal</button>
+            <button class="quick-btn" onclick="quickStart('I need financial advice')">Financial</button>
+            <button class="quick-btn" onclick="quickStart('I need tax help')">Taxes</button>
+            <button class="quick-btn" onclick="quickStart('I need insurance guidance')">Insurance</button>
+            <button class="quick-btn" onclick="quickStart('I need help with debt')">Debt</button>
+            <button class="quick-btn" onclick="quickStart('I need real estate advice')">Real Estate</button>
+          </div>
+
+          <div class="domain-group-label">Health &amp; Body</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need medical guidance')">Medical</button>
+            <button class="quick-btn" onclick="quickStart('I need mental health support')">Mental Health</button>
+            <button class="quick-btn" onclick="quickStart('I need fitness advice')">Fitness</button>
+            <button class="quick-btn" onclick="quickStart('I need nutrition guidance')">Nutrition</button>
+            <button class="quick-btn special" onclick="quickStart('How do I look?')">How do I look?</button>
+          </div>
+
+          <div class="domain-group-label">Work &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need career guidance')">Career</button>
+            <button class="quick-btn" onclick="quickStart('I need business advice')">Business</button>
+            <button class="quick-btn" onclick="quickStart('I need education guidance')">Education</button>
+            <button class="quick-btn" onclick="quickStart('I need help with relationships')">Relationships</button>
+            <button class="quick-btn" onclick="quickStart('I need parenting advice')">Parenting</button>
+            <button class="quick-btn" onclick="quickStart('I need family advice')">Family</button>
+          </div>
+
+          <div class="domain-group-label">Home &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need home improvement advice')">Home</button>
+            <button class="quick-btn" onclick="quickStart('I need travel advice')">Travel</button>
+            <button class="quick-btn" onclick="quickStart('I need pet advice')">Pets</button>
+            <button class="quick-btn" onclick="quickStart('I need auto or vehicle advice')">Auto</button>
+            <button class="quick-btn" onclick="quickStart('I need tech help')">Tech</button>
+            <button class="quick-btn" onclick="quickStart('I need retirement planning advice')">Retirement</button>
+          </div>
+
+          <div class="domain-group-label">Decisions</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need help making a big decision')">Big Decision</button>
+            <button class="quick-btn" onclick="quickStart('I need everyday advice')">General Advice</button>
+            <button class="quick-btn" onclick="quickStart('I need immigration guidance')">Immigration</button>
+            <button class="quick-btn" onclick="quickStart('I need spiritual or life guidance')">Spirituality</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <button class="cam-btn" onclick="openCamera()" title="Appearance analysis">📷</button>
+      <textarea id="userInput" placeholder="Describe your problem or ask anything..."
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are simper~decide — a sharp, no-fluff universal AI advisor. Your mission: solve everyday pain points. Decisions, problems, situations people don't know who to ask about.
+
+DOMAINS: Legal · Medical · Financial · Career · Relationships · Family · Parenting · Mental Health · Fitness · Nutrition · Business · Education · Real Estate · Taxes · Insurance · Debt · Home · Travel · Pets · Auto · Tech · Retirement · Immigration · Spirituality · General
+
+YOUR FLOW:
+1. When the user describes a problem, silently identify the domain.
+2. Ask ONE targeted clarifying question. Keep it short and direct.
+3. After 2–4 questions (when you have enough context), deliver TOP 3 PRO OPTIONS.
+4. Format options EXACTLY like this:
+
+[DOMAIN: Legal]
+
+TOP 3 PRO OPTIONS:
+① [Option name] — [one line: what it is + key consideration]
+② [Option name] — [one line: what it is + key consideration]
+③ [Option name] — [one line: what it is + key consideration]
+
+Then ask: "Want to go deeper on any of these, or move to the next step?"
+
+RULES:
+- One question at a time. Never stack questions.
+- Personal topics = professional advice only. No personal opinions or judgements.
+- Always give exactly 3 options when ready — never more, never fewer.
+- Keep drilling until the problem is fully resolved.
+- If user asks anything about their appearance, how they look, style, grooming → respond ONLY with: [CAMERA_NEEDED]
+- Be direct. No filler. No "Great question!" No unnecessary disclaimers.
+- Tone: sharp, confident, like a knowledgeable friend who happens to know everything professionally.
+- Never suggest the user "consult a professional" as a cop-out — BE the professional guidance.`;
+
+let sessions = [];
+let currentSessionId = null;
+let isLoading = false;
+let cameraStream = null;
+
+// ── Init ──
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+  loadSessions();
+  renderSessionList();
+  if (!localStorage.getItem('sd_api_key')) openSettings();
+});
+
+// ── Sessions ──
+function loadSessions() {
+  const stored = localStorage.getItem('sd_sessions');
+  sessions = stored ? JSON.parse(stored) : [];
+}
+
+function saveSessions() {
+  localStorage.setItem('sd_sessions', JSON.stringify(sessions));
+}
+
+function newSession() {
+  currentSessionId = Date.now().toString();
+  sessions.unshift({
+    id: currentSessionId,
+    title: 'New session',
+    date: new Date().toLocaleDateString(),
+    messages: []
+  });
+  if (sessions.length > 5) sessions = sessions.slice(0, 5);
+  saveSessions();
+  renderSessionList();
+  clearChat(true);
+}
+
+function loadSession(id) {
+  currentSessionId = id;
+  const session = sessions.find(s => s.id === id);
+  if (!session) return;
+  clearChat(false);
+  session.messages.forEach(m => renderMessage(m.role, m.content, false));
+  renderSessionList();
+  document.getElementById('chatArea').scrollTop = 9999;
+}
+
+function getSession() {
+  return sessions.find(s => s.id === currentSessionId);
+}
+
+function updateSessionTitle(text) {
+  const session = getSession();
+  if (session && session.title === 'New session') {
+    session.title = text.substring(0, 26) + (text.length > 26 ? '…' : '');
+    saveSessions();
+    renderSessionList();
+  }
+}
+
+function renderSessionList() {
+  const list = document.getElementById('sessionList');
+  list.innerHTML = '';
+  sessions.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
+    el.innerHTML = `${s.title}<span class="session-date">${s.date}</span>`;
+    el.onclick = () => loadSession(s.id);
+    list.appendChild(el);
+  });
+}
+
+function clearChat(showWelcome) {
+  const area = document.getElementById('chatArea');
+  if (showWelcome) {
+    area.innerHTML = `
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-logo">simper<span>~</span>decide</div>
+        <div class="welcome-sub">your universal AI advisor</div>
+        <div class="welcome-tagline">everyday decisions · any problem · pro options · no fluff</div>
+        <div class="domain-groups">
+          <div class="domain-group-label">Law &amp; Money</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need legal advice')">Legal</button>
+            <button class="quick-btn" onclick="quickStart('I need financial advice')">Financial</button>
+            <button class="quick-btn" onclick="quickStart('I need tax help')">Taxes</button>
+            <button class="quick-btn" onclick="quickStart('I need insurance guidance')">Insurance</button>
+            <button class="quick-btn" onclick="quickStart('I need help with debt')">Debt</button>
+            <button class="quick-btn" onclick="quickStart('I need real estate advice')">Real Estate</button>
+          </div>
+          <div class="domain-group-label">Health &amp; Body</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need medical guidance')">Medical</button>
+            <button class="quick-btn" onclick="quickStart('I need mental health support')">Mental Health</button>
+            <button class="quick-btn" onclick="quickStart('I need fitness advice')">Fitness</button>
+            <button class="quick-btn" onclick="quickStart('I need nutrition guidance')">Nutrition</button>
+            <button class="quick-btn special" onclick="quickStart('How do I look?')">How do I look?</button>
+          </div>
+          <div class="domain-group-label">Work &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need career guidance')">Career</button>
+            <button class="quick-btn" onclick="quickStart('I need business advice')">Business</button>
+            <button class="quick-btn" onclick="quickStart('I need education guidance')">Education</button>
+            <button class="quick-btn" onclick="quickStart('I need help with relationships')">Relationships</button>
+            <button class="quick-btn" onclick="quickStart('I need parenting advice')">Parenting</button>
+            <button class="quick-btn" onclick="quickStart('I need family advice')">Family</button>
+          </div>
+          <div class="domain-group-label">Home &amp; Life</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need home improvement advice')">Home</button>
+            <button class="quick-btn" onclick="quickStart('I need travel advice')">Travel</button>
+            <button class="quick-btn" onclick="quickStart('I need pet advice')">Pets</button>
+            <button class="quick-btn" onclick="quickStart('I need auto or vehicle advice')">Auto</button>
+            <button class="quick-btn" onclick="quickStart('I need tech help')">Tech</button>
+            <button class="quick-btn" onclick="quickStart('I need retirement planning advice')">Retirement</button>
+          </div>
+          <div class="domain-group-label">Decisions</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="quickStart('I need help making a big decision')">Big Decision</button>
+            <button class="quick-btn" onclick="quickStart('I need everyday advice')">General Advice</button>
+            <button class="quick-btn" onclick="quickStart('I need immigration guidance')">Immigration</button>
+            <button class="quick-btn" onclick="quickStart('I need spiritual or life guidance')">Spirituality</button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+// ── Messaging ──
+async function sendMessage(overrideText) {
+  if (isLoading) return;
+  const apiKey = localStorage.getItem('sd_api_key');
+  if (!apiKey) { openSettings(); return; }
+
+  const input = document.getElementById('userInput');
+  const text = overrideText || input.value.trim();
+  if (!text) return;
+
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  if (!currentSessionId) newSession();
+
+  input.value = '';
+  autoResize(input);
+
+  const session = getSession();
+  session.messages.push({ role: 'user', content: text });
+  updateSessionTitle(text);
+  saveSessions();
+  renderMessage('user', text);
+
+  const typingEl = showTyping();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: session.messages.map(m => ({ role: m.role, content: m.content }))
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error ' + response.status);
+    }
+
+    const data = await response.json();
+    const reply = data.content[0].text;
+    typingEl.remove();
+
+    if (reply.trim() === '[CAMERA_NEEDED]') {
+      openCamera();
+      const msg = 'Opening camera for appearance analysis...';
+      session.messages.push({ role: 'assistant', content: msg });
+      saveSessions();
+      renderMessage('assistant', msg);
+    } else {
+      session.messages.push({ role: 'assistant', content: reply });
+      saveSessions();
+      renderMessage('assistant', reply);
+    }
+
+  } catch (err) {
+    typingEl.remove();
+    renderMessage('error', `[ERROR] ${err.message}`);
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function renderMessage(role, content, scroll = true) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  const isError = role === 'error';
+  div.className = `msg ${isError ? 'msg-error' : role}`;
+
+  const prefix = role === 'user' ? '> YOU' : isError ? '✕ ERROR' : '◈ ADVISOR';
+  div.innerHTML = `
+    <div class="msg-prefix">${prefix}</div>
+    <div class="msg-body">${formatContent(content)}</div>`;
+
+  area.appendChild(div);
+  if (scroll) area.scrollTop = area.scrollHeight;
+}
+
+function formatContent(text) {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Domain badge
+  html = html.replace(/\[DOMAIN:\s*([^\]]+)\]/g,
+    '<span class="domain-badge">$1</span><br>');
+
+  // TOP 3 PRO OPTIONS block
+  if (html.includes('TOP 3 PRO OPTIONS')) {
+    const parts = html.split('TOP 3 PRO OPTIONS:');
+    if (parts.length === 2) {
+      const before = parts[0];
+      const raw = parts[1];
+      const lines = raw.split('\n');
+      let items = '';
+      let after = '';
+      let inOptions = true;
+
+      lines.forEach(line => {
+        const t = line.trim();
+        if (!t) return;
+        const m = t.match(/^[①②③]\s*(.+?)\s*[—-]\s*(.+)$/);
+        if (m && inOptions) {
+          items += `<div class="option-item">
+            <span class="option-num">▶</span>
+            <span class="option-name">${m[1]}</span> — ${m[2]}
+          </div>`;
+        } else {
+          inOptions = false;
+          after += `<div style="margin-top:10px;font-size:0.82rem;color:#aaa">${t}</div>`;
+        }
+      });
+
+      html = before +
+        `<div class="options-block">
+          <div class="options-title">▲ Top 3 Pro Options</div>
+          ${items}
+        </div>${after}`;
+    }
+  }
+
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Line breaks
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+function showTyping() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `
+    <div class="msg-prefix">◈ ADVISOR</div>
+    <div class="typing"><span></span><span></span><span></span></div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+  return div;
+}
+
+function quickStart(text) {
+  if (!currentSessionId) newSession();
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+  sendMessage(text);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── Settings ──
+function openSettings() {
+  document.getElementById('apiKeyInput').value = localStorage.getItem('sd_api_key') || '';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) localStorage.setItem('sd_api_key', key);
+  closeSettings();
+}
+
+// ── Camera ──
+async function openCamera() {
+  document.getElementById('cameraModal').classList.add('open');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    document.getElementById('cameraFeed').srcObject = cameraStream;
+  } catch (err) {
+    closeCamera();
+    renderMessage('error', '[CAMERA] Could not access camera: ' + err.message);
+  }
+}
+
+function closeCamera() {
+  document.getElementById('cameraModal').classList.remove('open');
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+async function captureAndAnalyze() {
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+  closeCamera();
+
+  const apiKey = localStorage.getItem('sd_api_key');
+  if (!apiKey) { openSettings(); return; }
+  if (!currentSessionId) newSession();
+
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  const session = getSession();
+  const userMsg = 'How do I look? [photo captured]';
+  session.messages.push({ role: 'user', content: userMsg });
+  updateSessionTitle('Appearance analysis');
+  saveSessions();
+  renderMessage('user', userMsg);
+
+  const typingEl = showTyping();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 1024,
+        system: `You are simper~decide's appearance advisor. Analyze the person's look professionally and constructively. Give TOP 3 specific, actionable style or grooming recommendations. Be honest but kind. Format exactly:
+
+[DOMAIN: Appearance]
+
+TOP 3 PRO OPTIONS:
+① [First recommendation] — [specific actionable detail]
+② [Second recommendation] — [specific actionable detail]
+③ [Third recommendation] — [specific actionable detail]
+
+Then ask if they want to go deeper on any area.`,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+            { type: 'text', text: 'Analyze my appearance and give me your top 3 professional recommendations.' }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error ' + response.status);
+    }
+
+    const data = await response.json();
+    const reply = data.content[0].text;
+    typingEl.remove();
+    session.messages.push({ role: 'assistant', content: reply });
+    saveSessions();
+    renderMessage('assistant', reply);
+
+  } catch (err) {
+    typingEl.remove();
+    renderMessage('error', `[ERROR] ${err.message}`);
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
