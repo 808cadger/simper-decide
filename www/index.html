@@ -885,6 +885,54 @@
 </div>
 
 <script>
+// ── Storage (Capacitor Preferences on native, localStorage on web) ──
+const _cache = {};
+
+async function storageInit() {
+  const keys = ['sd_api_key','sd_sessions','sd_profile','sd_consent','sd_mode','sd_sound'];
+  for (const key of keys) {
+    let val = null;
+    if (window.Capacitor?.isNativePlatform?.()) {
+      const result = await window.Capacitor.Plugins.Preferences.get({ key });
+      val = result.value;
+    } else {
+      val = localStorage.getItem(key);
+    }
+    if (val !== null) _cache[key] = val;
+  }
+}
+
+function storeGet(key) {
+  return _cache[key] ?? null;
+}
+
+async function storeSet(key, value) {
+  _cache[key] = value;
+  if (window.Capacitor?.isNativePlatform?.()) {
+    await window.Capacitor.Plugins.Preferences.set({ key, value: String(value) });
+  } else {
+    localStorage.setItem(key, String(value));
+  }
+}
+
+async function storeRemove(key) {
+  delete _cache[key];
+  if (window.Capacitor?.isNativePlatform?.()) {
+    await window.Capacitor.Plugins.Preferences.remove({ key });
+  } else {
+    localStorage.removeItem(key);
+  }
+}
+
+async function storeClear() {
+  Object.keys(_cache).forEach(k => delete _cache[k]);
+  if (window.Capacitor?.isNativePlatform?.()) {
+    await window.Capacitor.Plugins.Preferences.clear();
+  } else {
+    localStorage.clear();
+  }
+}
+
 // ── System prompts ──
 const SYSTEM_PROMPT_ADVISOR = `You are simper~decide — a sharp, no-fluff universal AI advisor. Your mission: solve everyday pain points. Decisions, problems, situations people don't know who to ask about.
 
@@ -953,10 +1001,10 @@ let cameraStream = null;
 let profileCameraStream = null;
 
 // Mode: 'advisor' | 'chat'
-let currentMode = localStorage.getItem('sd_mode') || 'advisor';
+let currentMode = 'advisor';  // will be set in initApp
 
 // Sound: true | false
-let soundEnabled = localStorage.getItem('sd_sound') === 'true';
+let soundEnabled = false;      // will be set in initApp
 
 // Speech recognition
 let recognition = null;
@@ -1008,9 +1056,9 @@ function playBeep() {
   } catch (e) {}
 }
 
-function toggleSound() {
+async function toggleSound() {
   soundEnabled = !soundEnabled;
-  localStorage.setItem('sd_sound', soundEnabled ? 'true' : 'false');
+  await storeSet('sd_sound', soundEnabled ? 'true' : 'false');
   updateSoundBtn();
   if (soundEnabled) playBeep();
 }
@@ -1022,9 +1070,9 @@ function updateSoundBtn() {
 }
 
 // ── Mode ──
-function toggleMode() {
+async function toggleMode() {
   currentMode = currentMode === 'advisor' ? 'chat' : currentMode === 'chat' ? 'chaos' : 'advisor';
-  localStorage.setItem('sd_mode', currentMode);
+  await storeSet('sd_mode', currentMode);
   updateModeBtn();
 }
 
@@ -1108,11 +1156,12 @@ function stopRecording() {
 }
 
 // ── Init ──
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
-  if (!localStorage.getItem('sd_consent')) {
+  await storageInit();
+  if (!storeGet('sd_consent')) {
     document.getElementById('consentModal').classList.add('open');
     return;
   }
@@ -1120,17 +1169,19 @@ window.addEventListener('load', () => {
 });
 
 function initApp() {
+  currentMode = storeGet('sd_mode') || 'advisor';
+  soundEnabled = storeGet('sd_sound') === 'true';
   loadSessions();
   renderSessionList();
   loadProfileAvatar();
   updateModeBtn();
   updateSoundBtn();
-  if (!localStorage.getItem('sd_api_key')) openSettings();
+  if (!storeGet('sd_api_key')) openSettings();
 }
 
 // ── Consent ──
-function acceptConsent() {
-  localStorage.setItem('sd_consent', '1');
+async function acceptConsent() {
+  await storeSet('sd_consent', '1');
   document.getElementById('consentModal').classList.remove('open');
   initApp();
 }
@@ -1144,7 +1195,7 @@ function declineConsent() {
 // ── My Data ──
 function openDataModal() {
   closeSettings();
-  const apiKey = localStorage.getItem('sd_api_key');
+  const apiKey = storeGet('sd_api_key');
   const profile = getProfile();
   const sessionCount = sessions.length;
   const totalMessages = sessions.reduce((n, s) => n + s.messages.length, 0);
@@ -1182,9 +1233,9 @@ function closeDataModal() {
   document.getElementById('dataModal').classList.remove('open');
 }
 
-function clearAllData() {
+async function clearAllData() {
   if (!confirm('Delete ALL stored data? This cannot be undone.')) return;
-  localStorage.clear();
+  await storeClear();
   sessions = [];
   currentSessionId = null;
   showToast('All data deleted');
@@ -1219,7 +1270,7 @@ function exportSession() {
 
 // ── Profile ──
 function getProfile() {
-  const p = localStorage.getItem('sd_profile');
+  const p = storeGet('sd_profile');
   return p ? JSON.parse(p) : {};
 }
 
@@ -1267,13 +1318,13 @@ function closeProfile() {
   document.getElementById('profileModal').classList.remove('open');
 }
 
-function saveProfile() {
+async function saveProfile() {
   const p = getProfile();
   p.name = document.getElementById('profileName').value.trim();
   p.age = document.getElementById('profileAge').value.trim();
   p.location = document.getElementById('profileLocation').value.trim();
   p.background = document.getElementById('profileBackground').value.trim();
-  localStorage.setItem('sd_profile', JSON.stringify(p));
+  await storeSet('sd_profile', JSON.stringify(p));
   loadProfileAvatar();
   closeProfile();
   showToast('Profile saved');
@@ -1287,22 +1338,22 @@ function handleProfilePhotoUpload(e) {
   reader.readAsDataURL(file);
 }
 
-function setProfilePhoto(dataUrl) {
+async function setProfilePhoto(dataUrl) {
   document.getElementById('profilePhotoPreview').src = dataUrl;
   document.getElementById('profilePhotoPreview').classList.add('visible');
   document.getElementById('profilePhotoPlaceholder').style.display = 'none';
   const p = getProfile();
   p.photo = dataUrl;
-  localStorage.setItem('sd_profile', JSON.stringify(p));
+  await storeSet('sd_profile', JSON.stringify(p));
   loadProfileAvatar();
 }
 
-function clearProfilePhoto() {
+async function clearProfilePhoto() {
   document.getElementById('profilePhotoPreview').classList.remove('visible');
   document.getElementById('profilePhotoPlaceholder').style.display = 'flex';
   const p = getProfile();
   delete p.photo;
-  localStorage.setItem('sd_profile', JSON.stringify(p));
+  await storeSet('sd_profile', JSON.stringify(p));
   document.getElementById('profileAvatarImg').style.display = 'none';
   document.getElementById('profileAvatarPlaceholder').style.display = 'flex';
 }
@@ -1357,15 +1408,15 @@ function showToast(msg) {
 
 // ── Sessions ──
 function loadSessions() {
-  const stored = localStorage.getItem('sd_sessions');
+  const stored = storeGet('sd_sessions');
   sessions = stored ? JSON.parse(stored) : [];
 }
 
-function saveSessions() {
-  localStorage.setItem('sd_sessions', JSON.stringify(sessions));
+async function saveSessions() {
+  await storeSet('sd_sessions', JSON.stringify(sessions));
 }
 
-function newSession() {
+async function newSession() {
   currentSessionId = Date.now().toString();
   sessions.unshift({
     id: currentSessionId,
@@ -1374,7 +1425,7 @@ function newSession() {
     messages: []
   });
   if (sessions.length > 5) sessions = sessions.slice(0, 5);
-  saveSessions();
+  await saveSessions();
   renderSessionList();
   clearChat(true);
 }
@@ -1393,11 +1444,11 @@ function getSession() {
   return sessions.find(s => s.id === currentSessionId);
 }
 
-function updateSessionTitle(text) {
+async function updateSessionTitle(text) {
   const session = getSession();
   if (session && session.title === 'New session') {
     session.title = text.substring(0, 26) + (text.length > 26 ? '…' : '');
-    saveSessions();
+    await saveSessions();
     renderSessionList();
   }
 }
@@ -1459,7 +1510,7 @@ function clearChat(showWelcome) {
 // ── Messaging ──
 async function sendMessage(overrideText) {
   if (isLoading) return;
-  const apiKey = localStorage.getItem('sd_api_key');
+  const apiKey = storeGet('sd_api_key');
   if (!apiKey) { openSettings(); return; }
 
   const input = document.getElementById('userInput');
@@ -1475,7 +1526,7 @@ async function sendMessage(overrideText) {
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
 
-  if (!currentSessionId) newSession();
+  if (!currentSessionId) await newSession();
 
   input.value = '';
   autoResize(input);
@@ -1483,7 +1534,7 @@ async function sendMessage(overrideText) {
   const session = getSession();
   session.messages.push({ role: 'user', content: text });
   updateSessionTitle(text);
-  saveSessions();
+  await saveSessions();
   renderMessage('user', text);
 
   isLoading = true;
@@ -1528,14 +1579,14 @@ async function sendMessage(overrideText) {
           const mediaType = p.photo.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
           const msg = 'Using your profile photo for appearance analysis...';
           session.messages.push({ role: 'assistant', content: msg });
-          saveSessions();
+          await saveSessions();
           renderMessage('assistant', msg);
           await analyzeAppearanceWithPhoto(base64, mediaType);
         } else {
           openCamera();
           const msg = 'Opening camera for appearance analysis...';
           session.messages.push({ role: 'assistant', content: msg });
-          saveSessions();
+          await saveSessions();
           renderMessage('assistant', msg);
         }
         return;
@@ -1545,7 +1596,7 @@ async function sendMessage(overrideText) {
     }
 
     session.messages.push({ role: 'assistant', content: reply });
-    saveSessions();
+    await saveSessions();
 
     // Beep on completion
     playBeep();
@@ -1711,8 +1762,8 @@ function formatContent(text) {
   return html;
 }
 
-function quickStart(text) {
-  if (!currentSessionId) newSession();
+async function quickStart(text) {
+  if (!currentSessionId) await newSession();
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
   sendMessage(text);
@@ -1732,7 +1783,7 @@ function autoResize(el) {
 
 // ── Settings ──
 function openSettings() {
-  document.getElementById('apiKeyInput').value = localStorage.getItem('sd_api_key') || '';
+  document.getElementById('apiKeyInput').value = storeGet('sd_api_key') || '';
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -1740,9 +1791,9 @@ function closeSettings() {
   document.getElementById('settingsModal').classList.remove('open');
 }
 
-function saveSettings() {
+async function saveSettings() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (key) localStorage.setItem('sd_api_key', key);
+  if (key) await storeSet('sd_api_key', key);
   closeSettings();
 }
 
@@ -1780,9 +1831,9 @@ async function captureAndAnalyze() {
 }
 
 async function analyzeAppearanceWithPhoto(base64, mediaType = 'image/jpeg') {
-  const apiKey = localStorage.getItem('sd_api_key');
+  const apiKey = storeGet('sd_api_key');
   if (!apiKey) { openSettings(); return; }
-  if (!currentSessionId) newSession();
+  if (!currentSessionId) await newSession();
 
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
@@ -1791,7 +1842,7 @@ async function analyzeAppearanceWithPhoto(base64, mediaType = 'image/jpeg') {
   if (!session.messages.find(m => m.content.includes('[photo'))) {
     session.messages.push({ role: 'user', content: 'How do I look? [photo captured]' });
     updateSessionTitle('Appearance analysis');
-    saveSessions();
+    await saveSessions();
     renderMessage('user', 'How do I look? [photo captured]');
   }
 
@@ -1844,7 +1895,7 @@ Then ask if they want to go deeper on any area.`,
     if (bodyEl) bodyEl.innerHTML = formatContent(reply);
 
     session.messages.push({ role: 'assistant', content: reply });
-    saveSessions();
+    await saveSessions();
     playBeep();
 
   } catch (err) {
