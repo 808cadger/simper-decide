@@ -10,33 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Node 22
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Set up Java 21
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
           distribution: 'temurin'
+          java-version: '21'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Prepare web assets
-        run: mkdir -p www/icons && cp index.html manifest.json sw.js www/ && cp icons/icon-192.png icons/icon-512.png www/icons/
-
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Capacitor sync
+      - name: Sync Capacitor
         run: npx cap sync android
-
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
 
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
@@ -47,11 +42,11 @@ jobs:
           name: simper-decide-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          tag_name: v${{ github.run_number }}
-          name: "simper~decide v${{ github.run_number }}"
           files: android/app/build/outputs/apk/debug/app-debug.apk
+          name: SimperDecide ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
