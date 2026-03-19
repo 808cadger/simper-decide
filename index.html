@@ -1085,45 +1085,58 @@ const SYSTEM_PROMPT_CHAT = `You are simper~decide, a sharp knowledgeable AI assi
 
 // ── Local AI Engine (Transformers.js — CPU/WASM, no WebGPU needed) ──
 const LOCAL_MODEL = 'HuggingFaceTB/SmolLM2-360M-Instruct';
+const TF_CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0/dist/transformers.min.js';
+let _tf = null;
 let _pipeline = null;
 let _pipelineLoading = false;
+
+async function loadTF() {
+  if (!_tf) _tf = await import(TF_CDN);
+  return _tf;
+}
 
 async function ensureEngine() {
   if (_pipeline) return _pipeline;
   if (_pipelineLoading) {
-    while (_pipelineLoading) await new Promise(r => setTimeout(r, 150));
+    while (_pipelineLoading) await new Promise(r => setTimeout(r, 200));
+    if (!_pipeline) throw new Error('Model failed to load — check internet and retry');
     return _pipeline;
   }
   _pipelineLoading = true;
-  document.getElementById('modelLoader').classList.add('open');
+  const loader = document.getElementById('modelLoader');
+  loader.classList.add('open');
   document.getElementById('modelLoaderSub').textContent =
-    'Downloading AI model (~200MB, one-time). Stored on your device after this.';
+    'First-time setup: downloading AI model (~200MB). Saved on device after this.';
 
   try {
-    const { pipeline, env } = await import(
-      'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
-    );
+    const { pipeline, env } = await loadTF();
     env.allowLocalModels = false;
+    env.useBrowserCache = true;
 
     _pipeline = await pipeline('text-generation', LOCAL_MODEL, {
       dtype: 'q4',
       device: 'wasm',
-      progress_callback: (p) => {
-        if (p.status === 'progress' && p.progress != null) {
-          const pct = Math.round(p.progress);
+      progress_callback: ({ status, progress, file }) => {
+        if (status === 'progress' && progress != null) {
+          const pct = Math.round(progress);
           document.getElementById('modelProgressFill').style.width = pct + '%';
           document.getElementById('modelProgressText').textContent =
-            (p.file ? p.file.split('/').pop() + ' — ' : '') + pct + '%';
-        } else if (p.status === 'ready') {
-          document.getElementById('modelProgressText').textContent = 'Ready!';
+            (file ? file.split('/').pop() + ' — ' : '') + pct + '%';
+        } else if (status === 'ready') {
+          document.getElementById('modelProgressText').textContent = 'Model ready!';
         }
       }
     });
+
+    return _pipeline;
+  } catch (err) {
+    loader.classList.remove('open');
+    _pipelineLoading = false;
+    throw err;
   } finally {
     _pipelineLoading = false;
-    document.getElementById('modelLoader').classList.remove('open');
+    loader.classList.remove('open');
   }
-  return _pipeline;
 }
 
 // ── State ──
@@ -1678,9 +1691,8 @@ async function runLocalStream(pipe, messages, streamDiv) {
   const area = document.getElementById('chatArea');
   let accumulated = '';
 
-  const { TextStreamer } = await import(
-    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
-  );
+  // reuse cached TF module — no second network fetch
+  const { TextStreamer } = await loadTF();
 
   const streamer = new TextStreamer(pipe.tokenizer, {
     skip_prompt: true,
@@ -1700,6 +1712,7 @@ async function runLocalStream(pipe, messages, streamDiv) {
     max_new_tokens: 512,
     do_sample: true,
     temperature: 0.7,
+    repetition_penalty: 1.1,
     streamer,
   });
 
