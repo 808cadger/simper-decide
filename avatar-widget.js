@@ -44,38 +44,44 @@
     border: 1.5px solid #4fc3f7;
     border-radius: 16px 16px 4px 16px;
     color: #e3f2fd;
-    font-size: 14px;
+    font-size: 11px;
     line-height: 1.5;
-    max-width: 240px;
-    padding: 12px 16px;
+    max-width: 200px;
+    padding: 10px 13px;
     box-shadow: 0 0 18px rgba(79, 195, 247, 0.35), 0 4px 20px rgba(0,0,0,0.5);
     animation: sw-fadein 0.4s ease;
     cursor: pointer;
     position: relative;
+    word-break: break-word;
   }
   .sw-bubble::after {
     content: '';
     position: absolute;
     bottom: -10px;
-    right: 20px;
+    right: 18px;
     border: 5px solid transparent;
     border-top-color: #4fc3f7;
   }
-  .sw-bubble .sw-typing {
+  .sw-bubble .sw-text {
+    display: block;
+    min-height: 1em;
+  }
+  .sw-cursor {
     display: inline-block;
-    overflow: hidden;
-    white-space: nowrap;
-    border-right: 2px solid #4fc3f7;
-    animation: sw-type 1.2s steps(40) forwards, sw-cursor 0.7s step-end infinite;
-    max-width: 100%;
+    width: 2px;
+    height: 0.9em;
+    background: #4fc3f7;
+    margin-left: 1px;
+    vertical-align: middle;
+    animation: sw-cursor 0.7s step-end infinite;
   }
   .sw-bubble .sw-skip {
-    font-size: 10px;
+    font-size: 9px;
     color: #4fc3f7;
     opacity: 0.6;
     display: block;
     text-align: right;
-    margin-top: 6px;
+    margin-top: 5px;
   }
 
   /* ── Droid Body ── */
@@ -123,12 +129,8 @@
     from { opacity: 0; transform: translateY(8px) scale(0.95); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
-  @keyframes sw-type {
-    from { max-width: 0; }
-    to   { max-width: 100%; }
-  }
   @keyframes sw-cursor {
-    50% { border-color: transparent; }
+    50% { opacity: 0; }
   }
   `;
 
@@ -205,6 +207,7 @@
 
   let currentIndex = -1;
   let typingTimeout = null;
+  let charInterval = null;
 
   function nextGreeting() {
     let next;
@@ -215,9 +218,11 @@
   }
 
   function showBubble(wrap) {
-    let bubble = wrap.querySelector('.sw-bubble');
-    const text = nextGreeting();
+    // Cancel any in-progress typing
+    clearInterval(charInterval);
+    clearTimeout(typingTimeout);
 
+    let bubble = wrap.querySelector('.sw-bubble');
     if (!bubble) {
       bubble = document.createElement('div');
       bubble.className = 'sw-bubble';
@@ -225,15 +230,35 @@
       wrap.insertBefore(bubble, wrap.querySelector('.sw-droid-btn'));
     }
 
-    // Reset animation
-    bubble.innerHTML = `<span class="sw-typing">${text}</span><span class="sw-skip">tap for more</span>`;
+    const text = nextGreeting();
+    const textSpan = document.createElement('span');
+    textSpan.className = 'sw-text';
+    const cursor = document.createElement('span');
+    cursor.className = 'sw-cursor';
+    const skip = document.createElement('span');
+    skip.className = 'sw-skip';
+    skip.textContent = 'tap for more';
+
+    bubble.innerHTML = '';
+    bubble.appendChild(textSpan);
+    bubble.appendChild(cursor);
+    bubble.appendChild(skip);
+
+    // Fade in
     bubble.style.animation = 'none';
     void bubble.offsetWidth;
     bubble.style.animation = 'sw-fadein 0.4s ease';
 
-    // Auto-cycle every 8s
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => showBubble(wrap), 8000);
+    // Type characters one by one
+    let i = 0;
+    charInterval = setInterval(() => {
+      textSpan.textContent = text.slice(0, ++i);
+      if (i >= text.length) {
+        clearInterval(charInterval);
+        // Auto-cycle after 7s
+        typingTimeout = setTimeout(() => showBubble(wrap), 7000);
+      }
+    }, 28);
   }
 
   function init(selector) {
