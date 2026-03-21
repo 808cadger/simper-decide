@@ -1,37 +1,37 @@
-name: Deploy PWA to GitHub Pages
+name: Deploy to Codeberg Pages
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Deploy to pages branch
+        run: |
+          git config user.name "Forgejo Actions"
+          git config user.email "actions@noreply.codeberg.org"
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
+          DEPLOY_DIR=$(mktemp -d)
+          cp index.html "$DEPLOY_DIR/" 2>/dev/null || true
+          [ -f manifest.json ] && cp manifest.json "$DEPLOY_DIR/"
+          [ -f sw.js ]         && cp sw.js         "$DEPLOY_DIR/"
+          [ -f style.css ]     && cp style.css     "$DEPLOY_DIR/"
+          [ -d icons ]         && cp -r icons      "$DEPLOY_DIR/"
+          [ -d www ]           && cp -r www        "$DEPLOY_DIR/"
+          for f in *.js; do [ -f "$f" ] && cp "$f" "$DEPLOY_DIR/"; done
+          [ -f resume.html ]   && cp resume.html   "$DEPLOY_DIR/"
+          [ -f *.pdf ]         && cp *.pdf         "$DEPLOY_DIR/" 2>/dev/null || true
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          cd "$DEPLOY_DIR"
+          git init
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          git checkout -b pages
+          git add -A
+          git commit -m "deploy: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push --force origin pages
