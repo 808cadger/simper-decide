@@ -84,6 +84,42 @@
     margin-top: 5px;
   }
 
+  /* ── Perplexity Search Bar ── */
+  .sw-search {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    background: rgba(79,195,247,0.08);
+    border: 1px solid rgba(79,195,247,0.4);
+    border-radius: 20px;
+    padding: 4px 8px;
+  }
+  .sw-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e3f2fd;
+    font-size: 11px;
+    min-width: 0;
+    caret-color: #4fc3f7;
+  }
+  .sw-search input::placeholder { color: rgba(179,229,252,0.45); }
+  .sw-search button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: #4fc3f7;
+    font-size: 13px;
+    line-height: 1;
+    transition: transform 0.15s;
+  }
+  .sw-search button:hover { transform: scale(1.2); }
+
   /* ── Droid Body ── */
   .sw-droid-btn {
     width: 72px;
@@ -239,9 +275,31 @@
     skip.className = 'sw-skip';
     skip.textContent = 'tap for more';
 
+    // Build search bar
+    const searchDiv = document.createElement('div');
+    searchDiv.className = 'sw-search';
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Ask Perplexity…';
+    searchInput.setAttribute('aria-label', 'Search Perplexity');
+    const searchBtn = document.createElement('button');
+    searchBtn.innerHTML = '&#9654;';
+    searchBtn.setAttribute('aria-label', 'Search');
+
+    function doSearch() {
+      const q = searchInput.value.trim();
+      if (q) window.open('https://www.perplexity.ai/search?q=' + encodeURIComponent(q), '_blank');
+    }
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+    searchDiv.appendChild(searchInput);
+    searchDiv.appendChild(searchBtn);
+
     bubble.innerHTML = '';
     bubble.appendChild(textSpan);
     bubble.appendChild(cursor);
+    bubble.appendChild(searchDiv);
     bubble.appendChild(skip);
 
     // Fade in
@@ -255,8 +313,11 @@
       textSpan.textContent = text.slice(0, ++i);
       if (i >= text.length) {
         clearInterval(charInterval);
-        // Auto-cycle after 7s
-        typingTimeout = setTimeout(() => showBubble(wrap), 7000);
+        // Remove cursor when done, focus search
+        cursor.style.display = 'none';
+        searchInput.focus();
+        // Auto-cycle after 12s if no interaction
+        typingTimeout = setTimeout(() => showBubble(wrap), 12000);
       }
     }, 28);
   }
