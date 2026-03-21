@@ -44,10 +44,10 @@
     border: 1.5px solid #4fc3f7;
     border-radius: 16px 16px 4px 16px;
     color: #e3f2fd;
-    font-size: 11px;
-    line-height: 1.5;
-    max-width: 200px;
-    padding: 10px 13px;
+    font-size: 9px;
+    line-height: 1.45;
+    max-width: 180px;
+    padding: 8px 11px;
     box-shadow: 0 0 18px rgba(79, 195, 247, 0.35), 0 4px 20px rgba(0,0,0,0.5);
     animation: sw-fadein 0.4s ease;
     cursor: pointer;
@@ -101,7 +101,7 @@
     border: none;
     outline: none;
     color: #e3f2fd;
-    font-size: 11px;
+    font-size: 9px;
     min-width: 0;
     caret-color: #4fc3f7;
   }
@@ -288,7 +288,15 @@
 
     function doSearch() {
       const q = searchInput.value.trim();
-      if (q) window.open('https://www.perplexity.ai/search?q=' + encodeURIComponent(q), '_blank');
+      if (!q) return;
+      const a = document.createElement('a');
+      a.href = 'https://www.perplexity.ai/search?q=' + encodeURIComponent(q);
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
     searchBtn.addEventListener('click', doSearch);
     searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
