@@ -301,14 +301,30 @@
     searchBtn.addEventListener('click', doSearch);
     searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 
+    // "tap for more" opens Perplexity with query or homepage
+    skip.textContent = 'tap for more ›';
+    skip.style.cursor = 'pointer';
+    skip.addEventListener('click', e => {
+      e.stopPropagation();
+      const q = searchInput.value.trim();
+      const url = q
+        ? 'https://www.perplexity.ai/search?q=' + encodeURIComponent(q)
+        : 'https://www.perplexity.ai';
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.style.display = 'none';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+
     searchDiv.appendChild(searchInput);
     searchDiv.appendChild(searchBtn);
+    bubble.appendChild(searchDiv);
+    bubble.appendChild(skip);
 
     bubble.innerHTML = '';
     bubble.appendChild(textSpan);
     bubble.appendChild(cursor);
     bubble.appendChild(searchDiv);
-    bubble.appendChild(skip);
 
     // Fade in
     bubble.style.animation = 'none';
