@@ -2,7 +2,7 @@
 
 > AI life advisor across 20 domains — tap a category, describe your situation, get clear expert-level guidance instantly.
 
-**[Live App](https://codeberg.org/cadger808/simper-decide) · [Codeberg](https://codeberg.org/cadger808/simper-decide)**
+**[Live App](https://cadger808.codeberg.page/simper-decide) · [Download APK](https://codeberg.org/cadger808/simper-decide/releases/download/v1.0.0/SimperDecide-v1.0.0.apk) · [Releases](https://codeberg.org/cadger808/simper-decide/releases) · [Codeberg](https://codeberg.org/cadger808/simper-decide)**
 
 ---
 
