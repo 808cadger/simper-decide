@@ -1,5 +1,41 @@
 # simper~decide 🧠
 
+<!-- INSTALL-START -->
+## Install and run
+
+These instructions install and run `simper-decide` from a fresh clone.
+
+### Clone
+```bash
+git clone https://github.com/808cadger/simper-decide.git
+cd simper-decide
+```
+
+### Web app
+```bash
+npm install
+npm start
+```
+
+### Android build/open
+```bash
+npm run cap:sync
+npm run cap:android
+```
+
+### Notes
+- Use Node.js 22 or newer for the current package set.
+- Android builds require Android Studio, a configured SDK, and Java 21 when Gradle is used.
+
+### AI/API setup
+- If the app has AI features, add the required provider key in the app settings or local `.env` file.
+- Browser-only apps store user-provided API keys on the local device unless a backend endpoint is configured.
+
+### License
+- Apache License 2.0. See [`LICENSE`](./LICENSE).
+<!-- INSTALL-END -->
+
+
 > AI life advisor across 20 domains — tap a category, describe your situation, get clear expert-level guidance instantly.
 
 **[Live App](https://cadger808.codeberg.page/simper-decide) · [Download APK](https://codeberg.org/cadger808/simper-decide/releases/download/v1.0.0/SimperDecide-v1.0.0.apk) · [Releases](https://codeberg.org/cadger808/simper-decide/releases) · [Codeberg](https://codeberg.org/cadger808/simper-decide)**
