@@ -1,10 +1,35 @@
-# simper~decide 🧠
+# simper~decide
+
+[![Release](https://img.shields.io/github/v/release/808cadger/simper-decide?include_prereleases&label=release)](https://github.com/808cadger/simper-decide/releases)
+[![Last commit](https://img.shields.io/github/last-commit/808cadger/simper-decide)](https://github.com/808cadger/simper-decide/commits)
+[![License](https://img.shields.io/github/license/808cadger/simper-decide)](https://github.com/808cadger/simper-decide/blob/HEAD/LICENSE)
+![Platforms](https://img.shields.io/badge/platform-Web%2FPWA%2C%20Android-2563eb)
+
+AI life advisor across legal, finance, medical, career, home, travel, and personal decision domains.
+
+## Project Snapshot
+
+| Area | Details |
+|------|---------|
+| Primary use case | AI life advisor across legal, finance, medical, career, home, travel, and personal decision domains. |
+| Platforms | Web/PWA, Android |
+| Core stack | JavaScript, Capacitor, PWA, Claude AI |
+| Review first | `www/index.html`, `index.html`, `android`, `capacitor.config.json`, `package.json` |
 
 ## Download Links
 
-- **iOS / iPhone:** Open the PWA in Safari: [simper~decide iOS install](https://808cadger.github.io/simper-decide/) and choose **Share -> Add to Home Screen**.
-- **Android:** Download the latest APK from GitHub Releases: [simper~decide Android releases](https://github.com/808cadger/simper-decide/releases/latest).
-- **Source download:** [Download the GitHub source ZIP](https://github.com/808cadger/simper-decide/archive/refs/heads/main.zip).
+| Platform | Link |
+|----------|------|
+| iOS / iPhone | [Open the PWA in Safari](https://808cadger.github.io/simper-decide/) and choose **Share -> Add to Home Screen** |
+| Android | [Download the latest APK from GitHub Releases](https://github.com/808cadger/simper-decide/releases/latest) |
+| Source | [Download the GitHub source ZIP](https://github.com/808cadger/simper-decide/archive/refs/heads/main.zip) |
+| Repository | [View on GitHub](https://github.com/808cadger/simper-decide) |
+
+## Why This Repo Is Worth Reviewing
+
+- Category-first UX reduces friction for broad advice workflows.
+- Privacy-first API-key model keeps credentials on device.
+- PWA and Android paths make the advisor portable.
 
 
 <!-- INSTALL-START -->
