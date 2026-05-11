@@ -1,5 +1,12 @@
 # simper~decide 🧠
 
+## Download Links
+
+- **iOS / iPhone:** Open the PWA in Safari: [simper~decide iOS install](https://808cadger.github.io/simper-decide/) and choose **Share -> Add to Home Screen**.
+- **Android:** Download the latest APK from GitHub Releases: [simper~decide Android releases](https://github.com/808cadger/simper-decide/releases/latest).
+- **Source download:** [Download the GitHub source ZIP](https://github.com/808cadger/simper-decide/archive/refs/heads/main.zip).
+
+
 <!-- INSTALL-START -->
 ## Install and run
 
