@@ -1,5 +1,5 @@
-const CACHE = 'simper-decide-v1';
-const ASSETS = ['./index.html', './manifest.json'];
+const CACHE = 'simper-decide-v2';
+const ASSETS = ['./index.html', './manifest.json', './advisor-engine.js', './avatar-widget.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

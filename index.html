@@ -241,6 +241,44 @@
       flex-shrink: 0;
     }
 
+    .host-stage {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      margin: 0 auto 10px;
+      width: min(100%, 560px);
+      padding: 12px;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-lg);
+      backdrop-filter: blur(12px);
+    }
+    .host-face {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 38% 30%, rgba(255,255,255,0.95), rgba(167,139,250,0.9) 24%, rgba(15,23,42,0.96) 68%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.14), 0 18px 44px rgba(96,165,250,0.25);
+      overflow: hidden;
+    }
+    .host-face svg { width: 72px; height: 72px; }
+    .host-copy h1 {
+      font-size: 1rem;
+      line-height: 1.2;
+      margin-bottom: 5px;
+      letter-spacing: 0;
+    }
+    .host-copy p {
+      color: var(--text-mid);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
     /* ── Domain tiles — full height floating grid ── */
     .domain-grid {
       flex: 1;
@@ -386,6 +424,59 @@
     .option-num { color: var(--accent); margin-right: 6px; font-size: 0.75rem; }
     .option-name { color: #c4b5fd; font-weight: 600; }
 
+    .result-card {
+      background: rgba(255,255,255,0.065);
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: var(--r-md);
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .result-pill {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: rgba(255,255,255,0.05);
+    }
+    .result-pill.review { color: #fbbf24; border-color: rgba(251,191,36,0.35); }
+    .result-section-title {
+      color: var(--accent);
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin: 12px 0 6px;
+      text-transform: uppercase;
+    }
+    .result-list {
+      padding-left: 18px;
+      color: var(--text-mid);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+    .json-block {
+      background: rgba(0,0,0,0.24);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: var(--r-sm);
+      color: #c4b5fd;
+      font-size: 0.7rem;
+      line-height: 1.45;
+      max-height: 220px;
+      overflow: auto;
+      padding: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     /* Domain badge */
     .domain-badge {
       display: inline-block;
@@ -480,6 +571,18 @@
     }
     .sound-btn.on { color: var(--accent); border-color: rgba(167,139,250,0.3); }
     .sound-btn:hover { background: var(--glass-hover); }
+
+    .persona-select {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-mid);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 5px 8px;
+      border-radius: 20px;
+      outline: none;
+    }
 
     .input-row {
       display: flex;
@@ -798,6 +901,11 @@
       .chat-area { padding: 8px 8px 4px; }
       .input-area { padding: 6px 8px 10px; }
       .domain-grid { gap: 5px; }
+      .host-stage { grid-template-columns: 74px minmax(0, 1fr); padding: 10px; }
+      .host-face { width: 66px; height: 66px; }
+      .host-face svg { width: 58px; height: 58px; }
+      .host-copy h1 { font-size: 0.9rem; }
+      .host-copy p { font-size: 0.7rem; }
     }
 
     @media (max-width: 380px) {
@@ -900,11 +1008,11 @@
 <!-- Camera Modal -->
 <div class="modal-overlay" id="cameraModal">
   <div class="modal cam-modal">
-    <div class="modal-title"><button class="modal-back" onclick="closeCamera()">←</button>Appearance Analysis</div>
+    <div class="modal-title"><button class="modal-back" onclick="closeCamera()">←</button>Photo / Video Intake</div>
     <video id="cameraFeed" autoplay playsinline></video>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeCamera()">Cancel</button>
-      <button class="btn-primary" onclick="captureAndAnalyze()">Analyze ▶</button>
+      <button class="btn-primary" onclick="captureAndAnalyze()">Attach Photo</button>
     </div>
   </div>
 </div>
@@ -947,11 +1055,26 @@
     <div class="main">
       <div class="chat-area" id="chatArea">
         <div class="welcome" id="welcomeScreen">
+          <div class="host-stage">
+            <div class="host-face" aria-hidden="true">
+              <svg viewBox="0 0 64 64" focusable="false">
+                <circle cx="32" cy="32" r="28" fill="#08111f" stroke="#a78bfa" stroke-width="2"/>
+                <path d="M19 35c0-11 6-18 13-18s13 7 13 18v6c0 3-2 5-5 5H24c-3 0-5-2-5-5v-6z" fill="#a78bfa" opacity=".25"/>
+                <circle cx="25" cy="34" r="3" fill="#a78bfa"/><circle cx="39" cy="34" r="3" fill="#60a5fa"/>
+                <path d="M25 44c5 3 9 3 14 0" stroke="#e7fbff" stroke-width="2" stroke-linecap="round" fill="none"/>
+                <path d="M32 10v7" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="8" r="3" fill="#60a5fa"/>
+              </svg>
+            </div>
+            <div class="host-copy">
+              <h1>Avatar advisor</h1>
+              <p>I will ask one question at a time, remember this session, review photos or videos when useful, then return practical advice with JSON and a plain-language summary.</p>
+            </div>
+          </div>
           <div class="welcome-logo">simper~decide</div>
-          <div class="welcome-sub">Ask anything — get your top 3 pro options</div>
+          <div class="welcome-sub">Choose a topic or describe the problem</div>
           <div class="domain-grid">
-            <button class="domain-tile" onclick="quickStart('I need legal advice')"><span class="tile-icon">⚖️</span><span class="tile-label">Legal</span></button>
-            <button class="domain-tile" onclick="quickStart('I need financial advice')"><span class="tile-icon">💰</span><span class="tile-label">Finance</span></button>
+            <button class="domain-tile" onclick="quickStart('I need life advice')"><span class="tile-icon">🧭</span><span class="tile-label">Life</span></button>
+            <button class="domain-tile" onclick="quickStart('I need financial advice')"><span class="tile-icon">💰</span><span class="tile-label">Money</span></button>
             <button class="domain-tile" onclick="quickStart('I need tax help')"><span class="tile-icon">🧾</span><span class="tile-label">Taxes</span></button>
             <button class="domain-tile" onclick="quickStart('I need real estate advice')"><span class="tile-icon">🏠</span><span class="tile-label">Real Estate</span></button>
             <button class="domain-tile" onclick="quickStart('I need insurance guidance')"><span class="tile-icon">🛡️</span><span class="tile-label">Insurance</span></button>
@@ -985,10 +1108,18 @@
       <div class="input-area">
         <div class="input-top">
           <button class="mode-toggle advisor" id="modeToggleBtn" onclick="toggleMode()">◈ Advisor</button>
+          <select class="persona-select" id="personaSelect" onchange="setPersona(this.value)" aria-label="Avatar persona">
+            <option value="practical">Practical</option>
+            <option value="calm">Calm</option>
+            <option value="direct">Direct</option>
+            <option value="coach">Coach</option>
+          </select>
           <button class="sound-btn" id="soundToggleBtn" onclick="toggleSound()" title="Toggle sounds">🔇</button>
         </div>
         <div class="input-row">
-          <button class="icon-btn" onclick="openCamera()" title="Appearance analysis">📷</button>
+          <button class="icon-btn" onclick="openCamera()" title="Take photo">📷</button>
+          <button class="icon-btn" onclick="document.getElementById('mediaInput').click()" title="Upload photo or video">↑</button>
+          <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none" onchange="handleMediaUpload(event)">
           <button class="icon-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
           <textarea id="userInput" placeholder="Describe your situation..."
             onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
@@ -999,12 +1130,13 @@
   </div>
 </div>
 
+<script src="./advisor-engine.js"></script>
 <script>
 // ── Storage (Capacitor Preferences on native, localStorage on web) ──
 const _cache = {};
 
 async function storageInit() {
-  const keys = ['sd_sessions','sd_profile','sd_consent','sd_mode','sd_sound'];
+  const keys = ['sd_sessions','sd_profile','sd_consent','sd_mode','sd_sound','sd_persona'];
   for (const key of keys) {
     let val = null;
     if (window.Capacitor?.isNativePlatform?.()) {
@@ -1148,6 +1280,7 @@ let cameraStream = null;
 let profileCameraStream = null;
 let currentMode = 'advisor';
 let soundEnabled = false;
+let currentPersona = 'practical';
 let recognition = null;
 let isRecording = false;
 let audioCtx = null;
@@ -1227,6 +1360,30 @@ function updateModeBtn() {
   }
 }
 
+async function setPersona(value) {
+  currentPersona = value || 'practical';
+  await storeSet('sd_persona', currentPersona);
+  const session = getSession();
+  if (session && window.SimperAdvisor) {
+    const memory = window.SimperAdvisor.ensureMemory(session);
+    memory.persona = currentPersona;
+    await saveSessions();
+  }
+}
+
+function updatePersonaSelect() {
+  const select = document.getElementById('personaSelect');
+  if (select) select.value = currentPersona;
+}
+
+function greetAvatar() {
+  if (!window.AgenticAvatar || !window.SimperAdvisor) return;
+  const profile = getProfile();
+  const firstName = profile.name ? profile.name.split(/\s+/)[0] : '';
+  const hello = window.SimperAdvisor.greeting(firstName);
+  window.AgenticAvatar.speak(hello.summary + ' ' + hello.question);
+}
+
 // ── Voice ──
 function toggleMic() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1294,11 +1451,14 @@ window.addEventListener('load', async () => {
 function initApp() {
   currentMode = storeGet('sd_mode') || 'advisor';
   soundEnabled = storeGet('sd_sound') === 'true';
+  currentPersona = storeGet('sd_persona') || 'practical';
   loadSessions();
   renderSessionList();
   loadProfileAvatar();
   updateModeBtn();
   updateSoundBtn();
+  updatePersonaSelect();
+  setTimeout(greetAvatar, 250);
 }
 
 // ── Consent ──
@@ -1315,6 +1475,8 @@ function declineConsent() {
 }
 
 // ── My Data ──
+function closeSettings() {}
+
 function openDataModal() {
   closeSettings();
   const profile = getProfile();
@@ -1527,7 +1689,13 @@ async function saveSessions() {
 
 async function newSession() {
   currentSessionId = Date.now().toString();
-  sessions.unshift({ id: currentSessionId, title: 'New session', date: new Date().toLocaleDateString(), messages: [] });
+  sessions.unshift({
+    id: currentSessionId,
+    title: 'New session',
+    date: new Date().toLocaleDateString(),
+    messages: [],
+    memory: window.SimperAdvisor ? window.SimperAdvisor.createMemory() : {}
+  });
   if (sessions.length > 5) sessions = sessions.slice(0, 5);
   await saveSessions();
   renderSessionList();
@@ -1539,7 +1707,10 @@ function loadSession(id) {
   const session = sessions.find(s => s.id === id);
   if (!session) return;
   clearChat(false);
-  session.messages.forEach(m => renderMessage(m.role, m.content, false));
+  session.messages.forEach(m => {
+    if (m.advisor) renderAdvisorResponse(m.advisor);
+    else renderMessage(m.role, m.content, false);
+  });
   renderSessionList();
   document.getElementById('chatArea').scrollTop = 9999;
   document.getElementById('backBtn').classList.add('visible');
@@ -1572,10 +1743,25 @@ function renderSessionList() {
 
 function buildWelcomeHTML() {
   return `<div class="welcome" id="welcomeScreen">
+    <div class="host-stage">
+      <div class="host-face" aria-hidden="true">
+        <svg viewBox="0 0 64 64" focusable="false">
+          <circle cx="32" cy="32" r="28" fill="#08111f" stroke="#a78bfa" stroke-width="2"/>
+          <path d="M19 35c0-11 6-18 13-18s13 7 13 18v6c0 3-2 5-5 5H24c-3 0-5-2-5-5v-6z" fill="#a78bfa" opacity=".25"/>
+          <circle cx="25" cy="34" r="3" fill="#a78bfa"/><circle cx="39" cy="34" r="3" fill="#60a5fa"/>
+          <path d="M25 44c5 3 9 3 14 0" stroke="#e7fbff" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path d="M32 10v7" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="8" r="3" fill="#60a5fa"/>
+        </svg>
+      </div>
+      <div class="host-copy">
+        <h1>Avatar advisor</h1>
+        <p>I will ask one question at a time, remember this session, review photos or videos when useful, then return practical advice with JSON and a plain-language summary.</p>
+      </div>
+    </div>
     <div class="welcome-logo">simper~decide</div>
-    <div class="welcome-sub">Ask anything — get your top 3 pro options</div>
+    <div class="welcome-sub">Choose a topic or describe the problem</div>
     <div class="domain-grid">
-      <button class="domain-tile" onclick="quickStart('I need legal advice')"><span class="tile-icon">⚖️</span><span class="tile-label">Legal</span></button>
+      <button class="domain-tile" onclick="quickStart('I need life advice')"><span class="tile-icon">🧭</span><span class="tile-label">Life</span></button>
       <button class="domain-tile" onclick="quickStart('I need financial advice')"><span class="tile-icon">💰</span><span class="tile-label">Finance</span></button>
       <button class="domain-tile" onclick="quickStart('I need tax help')"><span class="tile-icon">🧾</span><span class="tile-label">Taxes</span></button>
       <button class="domain-tile" onclick="quickStart('I need real estate advice')"><span class="tile-icon">🏠</span><span class="tile-label">Real Estate</span></button>
@@ -1633,6 +1819,9 @@ async function sendMessage(overrideText) {
   document.getElementById('backBtn').classList.add('visible');
 
   if (!currentSessionId) await newSession();
+  const postSessionWelcome = document.getElementById('welcomeScreen');
+  if (postSessionWelcome) postSessionWelcome.remove();
+  document.getElementById('backBtn').classList.add('visible');
 
   input.value = '';
   autoResize(input);
@@ -1642,6 +1831,16 @@ async function sendMessage(overrideText) {
   updateSessionTitle(text);
   await saveSessions();
   renderMessage('user', text);
+
+  if (currentMode === 'advisor' && window.SimperAdvisor) {
+    const response = window.SimperAdvisor.nextTurn(session, text, currentPersona);
+    const content = advisorResponseText(response);
+    session.messages.push({ role: 'assistant', content, advisor: response });
+    await saveSessions();
+    renderAdvisorResponse(response);
+    playBeep();
+    return;
+  }
 
   isLoading = true;
   document.getElementById('sendBtn').disabled = true;
@@ -1744,6 +1943,64 @@ function showChips(parentDiv, replyText) {
   document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
 }
 
+function advisorResponseText(response) {
+  if (!response) return '';
+  let text = response.summary;
+  if (response.question) text += '\n\n' + response.question;
+  if (response.json) text += '\n\nJSON_RESULT:\n' + JSON.stringify(response.json, null, 2);
+  return text;
+}
+
+function renderAdvisorResponse(response) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  const confidence = Math.round((response.confidence || 0) * 100);
+  let body = `<div>${formatContent(response.summary)}</div>`;
+
+  if (response.json) {
+    const result = response.json;
+    body += `<div class="result-card">
+      <div class="result-meta">
+        <span class="result-pill">${result.topicLabel}</span>
+        <span class="result-pill">${confidence}% confidence</span>
+        <span class="result-pill ${result.needsReview ? 'review' : ''}">${result.needsReview ? 'Review needed' : 'Ready'}</span>
+        <span class="result-pill">Media: ${escapeHtml(result.mediaAnalyzed)}</span>
+      </div>
+      <div class="result-section-title">Options</div>
+      <div class="options-block">
+        ${result.options.map((option, index) => `<div class="option-item">
+          <span class="option-num">${index + 1}.</span>
+          <span class="option-name">${escapeHtml(option.title)}</span> — ${escapeHtml(option.action)}
+          <div style="color:var(--text-dim);font-size:0.76rem;margin-top:4px">Risk: ${escapeHtml(option.risk)}</div>
+        </div>`).join('')}
+      </div>
+      <div class="result-section-title">Next Steps</div>
+      <ol class="result-list">${result.nextSteps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>
+      <div class="result-section-title">Structured JSON</div>
+      <pre class="json-block">${escapeHtml(JSON.stringify(result, null, 2))}</pre>
+    </div>`;
+  }
+
+  if (response.question) body += `<div style="margin-top:12px;color:var(--text-mid)">${formatContent(response.question)}</div>`;
+
+  div.innerHTML = `
+    <div class="msg-label">Avatar advisor</div>
+    <div class="msg-body">${body}</div>`;
+  area.appendChild(div);
+  if (response.type === 'result') showChips(div, response.summary);
+  area.scrollTop = area.scrollHeight;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderMessage(role, content, scroll = true) {
   const area = document.getElementById('chatArea');
   const div = document.createElement('div');
@@ -1811,6 +2068,28 @@ async function quickStart(text) {
   sendMessage(text);
 }
 
+async function attachMedia(file) {
+  if (!file) return;
+  if (!currentSessionId) await newSession();
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+  document.getElementById('backBtn').classList.add('visible');
+  const session = getSession();
+  const item = window.SimperAdvisor ? window.SimperAdvisor.addMedia(session, file) : null;
+  await saveSessions();
+  const description = item
+    ? `${item.kind} attached: ${item.name}. I can use this intake metadata in the current session; describe what you want me to inspect.`
+    : 'Media attached. Describe what you want me to inspect.';
+  renderMessage('assistant', description);
+  showToast('Media attached');
+}
+
+async function handleMediaUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  await attachMedia(file);
+  event.target.value = '';
+}
+
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -1850,19 +2129,21 @@ async function captureAndAnalyze() {
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
   const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  const captureFile = { name: 'camera-capture.jpg', type: 'image/jpeg', size: Math.round(dataUrl.length * 0.75) };
   const p = getProfile();
   if (!p.photo) setProfilePhoto(dataUrl);
   closeCamera();
-  await analyzeAppearanceWithPhoto();
+  await attachMedia(captureFile);
 }
 
 async function analyzeAppearanceWithPhoto() {
-  // Local model can't process images — route to text-based appearance advice
+  // #ASSUMPTION: Browser-only local inference cannot inspect pixels yet; media is tracked as session context.
+  // TODO: validate with a multimodal endpoint when one is configured.
   if (!currentSessionId) await newSession();
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
   document.getElementById('backBtn').classList.add('visible');
-  document.getElementById('userInput').value = 'I want advice on my appearance, style, and grooming. Ask me clarifying questions so you can give me the best recommendations.';
+  document.getElementById('userInput').value = 'I attached media for this situation. Ask me what visual details matter and help me decide the next step.';
   await sendMessage();
 }
 </script>
